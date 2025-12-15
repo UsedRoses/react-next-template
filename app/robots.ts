@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: '/dashboard/', // 禁止爬虫抓取后台页面
+            disallow: ['/api/', '/private/', '/dashboard/'], // 禁止爬虫抓取api和后台页面
         },
         sitemap: 'https://mysaas.com/sitemap.xml',
     }
