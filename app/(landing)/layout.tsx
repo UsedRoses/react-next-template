@@ -4,8 +4,8 @@ import React from 'react'
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import { inter } from "@/lib/fonts";
-import {LandingNavbar} from "@/app/(home)/components/navbar";
-import {LandingFooter} from "@/app/(home)/components/footer";
+import {LandingNavbar} from "@/app/(landing)/components/navbar";
+import {LandingFooter} from "@/app/(landing)/components/footer";
 
 export const metadata: Metadata = {
   title: "Shadcn Dashboard",
