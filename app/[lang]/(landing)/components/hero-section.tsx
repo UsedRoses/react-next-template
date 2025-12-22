@@ -25,7 +25,7 @@ export function HeroSection() {
           <div className="mb-8 flex justify-center">
             <Badge variant="outline" className="px-4 py-2 border-foreground">
               <Star className="w-3 h-3 mr-2 fill-current" />
-              {t('New: Premium Template Collection', 'this zhongwen')}
+              {t('New: Premium Template Collection')}
               <ArrowRight className="w-3 h-3 ml-2" />
             </Badge>
           </div>
