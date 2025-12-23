@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import VideoEditor from "@/components/video-edit/VideoEditor";

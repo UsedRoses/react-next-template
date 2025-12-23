@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as PIXI from "pixi.js";
 import { useEditor } from "./EditorContext";
+import { Loader2, Upload, AlertCircle } from "lucide-react";
 
 interface PixiPlayerProps {
-    src: string;
+    src?: string;
     autoPlay?: boolean;
 }
 
@@ -13,32 +14,106 @@ export default function PixiPlayer({ src, autoPlay = false }: PixiPlayerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const appRef = useRef<PIXI.Application | null>(null);
-    const textureRef = useRef<PIXI.Texture | null>(null);
-    const textMapRef = useRef<Map<string, PIXI.Text>>(new Map()); // 缓存 Pixi 文本对象
+    const textMapRef = useRef<Map<string, PIXI.Text>>(new Map());
 
-    const isInitialized = useRef(false);
+    const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+    const [blobUrl, setBlobUrl] = useState<string | null>(null);
+    const [canvasStyle, setCanvasStyle] = useState<React.CSSProperties>({});
+
+    const isSeekingRef = useRef(false);
+    const pendingSeekTimeRef = useRef<number | null>(null);
 
     const { state, dispatch } = useEditor();
     const { isPlaying, currentTime, subtitles, selectedId, isDraggingSeek } = state;
 
-    // 1. 初始化 Pixi 和 视频
+    // 1. 处理空状态 (如果没有 src，直接返回上传提示，不需要渲染 Pixi 容器)
+    if (!src) {
+        return (
+            <div className="w-full h-full flex flex-col justify-center items-center bg-slate-900 text-slate-500 gap-4 border-2 border-dashed border-slate-700 rounded-lg">
+                <Upload className="w-12 h-12" />
+                <p>请上传或传入视频源</p>
+            </div>
+        );
+    }
+
+    // 2. 预加载视频
     useEffect(() => {
-        if (!containerRef.current || !videoRef.current || isInitialized.current) return;
+        let active = true;
+        setLoadingState('loading');
+        setBlobUrl(null);
+
+        const loadVideo = async () => {
+            try {
+                const response = await fetch(src);
+                if (!response.ok) throw new Error("Video fetch failed");
+
+                const blob = await response.blob();
+                if (!active) return;
+
+                const objectUrl = URL.createObjectURL(blob);
+                setBlobUrl(objectUrl);
+                // 注意：这里不设为 ready，等 Pixi 初始化完再设
+            } catch (err) {
+                console.error(err);
+                if (active) setLoadingState('error');
+            }
+        };
+
+        loadVideo();
+        return () => {
+            active = false;
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+        };
+    }, [src]);
+
+    // 3. 初始化 Pixi
+    useEffect(() => {
+        // 必须等待 DOM 挂载且 Blob 准备好
+        if (!containerRef.current || !videoRef.current || !blobUrl) return;
+        if (appRef.current) return;
 
         const init = async () => {
-            isInitialized.current = true;
             const video = videoRef.current!;
 
-            // 等待视频元数据
+            // 等待元数据加载
             if (video.readyState < 1) {
                 await new Promise((r) => video.addEventListener("loadedmetadata", r, { once: true }));
             }
 
-            // 设置时长
-            dispatch({ type: "SET_DURATION", payload: video.duration });
-            if (autoPlay) dispatch({ type: "SET_PLAYING", payload: true });
+            // --- 关键修复：再次检查 DOM 是否还在 ---
+            // 因为 await 期间组件可能卸载或重绘，导致 ref 变空
+            if (!containerRef.current || !videoRef.current) return;
 
-            // 初始化 Pixi (宽高 = 视频原始分辨率)
+            dispatch({ type: "SET_DURATION", payload: video.duration });
+
+            // 计算尺寸
+            const container = containerRef.current;
+            const contW = container.clientWidth; // 现在这里安全了
+            const contH = container.clientHeight;
+
+            // 防止除以 0 错误
+            if (contW === 0 || contH === 0) return;
+
+            const vidRatio = video.videoWidth / video.videoHeight;
+            const contRatio = contW / contH;
+
+            let finalW, finalH;
+            if (contRatio > vidRatio) {
+                finalH = contH;
+                finalW = contH * vidRatio;
+            } else {
+                finalW = contW;
+                finalH = contW / vidRatio;
+            }
+
+            setCanvasStyle({
+                width: finalW,
+                height: finalH,
+                marginTop: (contH - finalH) / 2,
+                marginLeft: (contW - finalW) / 2,
+            });
+
+            // 初始化 Pixi
             const app = new PIXI.Application();
             await app.init({
                 width: video.videoWidth,
@@ -48,34 +123,47 @@ export default function PixiPlayer({ src, autoPlay = false }: PixiPlayerProps) {
                 backgroundAlpha: 0,
             });
 
-            // 样式适配
-            app.canvas.style.width = "100%";
-            app.canvas.style.height = "100%";
-            app.canvas.style.objectFit = "contain";
-            app.canvas.style.display = "block";
+            Object.assign(app.canvas.style, {
+                width: "100%",
+                height: "100%",
+                display: "block"
+            });
 
-            containerRef.current!.appendChild(app.canvas);
+            const innerWrapper = document.getElementById("pixi-inner-wrapper");
+            if(innerWrapper) innerWrapper.appendChild(app.canvas);
+
             appRef.current = app;
 
-            // 视频层
             const texture = PIXI.Texture.from(video);
-            textureRef.current = texture;
-
             const videoSprite = new PIXI.Sprite(texture);
             videoSprite.width = video.videoWidth;
             videoSprite.height = video.videoHeight;
             app.stage.addChild(videoSprite);
 
-            // 字幕层容器
             const subtitleContainer = new PIXI.Container();
             subtitleContainer.label = "subtitle-layer";
             app.stage.addChild(subtitleContainer);
 
-            // --- Ticker 逻辑 ---
+            setLoadingState('ready'); // 初始化完成，移除 Loading 遮罩
+
+            // 自动播放
+            if (autoPlay) {
+                dispatch({ type: "SET_PLAYING", payload: true });
+            }
+
+            // Ticker
+            video.addEventListener('seeking', () => { isSeekingRef.current = true; });
+            video.addEventListener('seeked', () => {
+                isSeekingRef.current = false;
+                if (pendingSeekTimeRef.current !== null) {
+                    const t = pendingSeekTimeRef.current;
+                    pendingSeekTimeRef.current = null;
+                    if (Math.abs(video.currentTime - t) > 0.1) video.currentTime = t;
+                }
+            });
+
             app.ticker.add(() => {
-                // A. 视频时间同步
-                if (!isDraggingSeek && !video.paused) {
-                    // 只有播放时才同步 React 状态
+                if (!isDraggingSeek && !video.paused && !isSeekingRef.current) {
                     dispatch({ type: "SET_TIME", payload: video.currentTime });
                     if (video.ended) dispatch({ type: "SET_PLAYING", payload: false });
                 }
@@ -87,158 +175,181 @@ export default function PixiPlayer({ src, autoPlay = false }: PixiPlayerProps) {
         return () => {
             if (appRef.current) {
                 appRef.current.destroy({ removeView: true }, { children: true });
-                isInitialized.current = false;
+                appRef.current = null;
                 textMapRef.current.clear();
             }
         };
-    }, []);
+    }, [blobUrl]); // 尺寸依赖容器，但简单起见只依赖 blobUrl 触发一次
 
-
-    // 2. 视频播放控制 (响应 State)
+    // 4. 智能跳转
     useEffect(() => {
         const video = videoRef.current;
-        if (!video) return;
+        if (!video || !blobUrl) return;
+        if (!video.paused && Math.abs(video.currentTime - currentTime) < 0.2) return;
+
+        if (isSeekingRef.current) {
+            pendingSeekTimeRef.current = currentTime;
+        } else {
+            video.currentTime = currentTime;
+        }
+    }, [currentTime, blobUrl]);
+
+    // 5. 播放控制
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || loadingState !== 'ready') return;
 
         if (isPlaying) {
             const playPromise = video.play();
+
             if (playPromise !== undefined) {
                 playPromise.catch((error) => {
-                    console.error("Auto-play prevented:", error);
-                    dispatch({ type: "SET_PLAYING", payload: false });
+                    // 核心修复：捕获 "NotAllowedError"
+                    if (error.name === 'NotAllowedError') {
+                        console.log("Autoplay blocked by browser, switching to muted mode.");
+                        // 1. 静音
+                        video.muted = true;
+                        // 2. 再次尝试播放
+                        video.play().catch((e) => {
+                            console.error("Autoplay failed completely:", e);
+                            // 实在不行，就把状态改为暂停，让用户自己点
+                            dispatch({ type: "SET_PLAYING", payload: false });
+                        });
+                    } else {
+                        // 其他错误（如资源加载失败），直接停止
+                        console.error("Playback failed:", error);
+                        dispatch({ type: "SET_PLAYING", payload: false });
+                    }
                 });
             }
         } else {
             video.pause();
         }
-    }, [isPlaying, dispatch]);
+    }, [isPlaying, loadingState]);
 
-    // 3. 视频时间跳转 (响应 Drag Seek 或 Click Seek)
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
-        // 允许 0.2s 的误差防止循环抖动
-        if (Math.abs(video.currentTime - currentTime) > 0.2) {
-            video.currentTime = currentTime;
-        }
-    }, [currentTime]);
-
-
-    // 4. 字幕渲染 (核心优化：增量更新)
+    // 6. 字幕渲染
     useEffect(() => {
         const app = appRef.current;
         if (!app) return;
-
-        // 获取字幕层
         const container = app.stage.children.find(c => c.label === "subtitle-layer") as PIXI.Container;
         if (!container) return;
 
-        // 标记当前依然存在的 ID
-        const activeIds = new Set<string>();
-
         subtitles.forEach((sub) => {
-            // 判断是否在时间范围内
             const isVisible = currentTime >= sub.startTime && currentTime <= sub.endTime;
+            let textObj = textMapRef.current.get(sub.id);
 
             if (!isVisible) {
-                // 如果不可见，但之前画过，就隐藏或移除
-                if (textMapRef.current.has(sub.id)) {
-                    const textObj = textMapRef.current.get(sub.id)!;
-                    textObj.visible = false;
-                }
+                if (textObj) textObj.visible = false;
                 return;
             }
 
-            activeIds.add(sub.id);
-            let textObj = textMapRef.current.get(sub.id);
-
-            // --- A. 如果不存在，创建新的 ---
             if (!textObj) {
                 const style = new PIXI.TextStyle({
                     fontSize: sub.style.fontSize,
                     fill: sub.style.fill,
+                    fontFamily: 'Arial',
                     stroke: { color: '#000000', width: 4 },
                     dropShadow: true,
                 });
                 textObj = new PIXI.Text({ text: sub.text, style });
-
-                // 绑定交互事件
+                textObj.label = sub.id;
                 textObj.eventMode = "static";
                 textObj.cursor = "grab";
-                textObj.label = sub.id; // 绑定 ID
 
-                // 拖拽逻辑闭包
-                let dragOffset: { x: number, y: number } | null = null;
+                let dragData: any = null;
+                let dragOffset = { x: 0, y: 0 };
 
                 textObj.on("pointerdown", (e) => {
                     textObj!.cursor = "grabbing";
+                    textObj!.alpha = 0.7;
                     dispatch({ type: "SELECT_SUB", payload: sub.id });
-                    const pos = e.data.getLocalPosition(textObj!.parent);
-                    dragOffset = { x: pos.x - textObj!.x, y: pos.y - textObj!.y };
+                    dragData = e.data;
+                    const localPos = textObj!.position;
+                    const globalPos = dragData.getLocalPosition(textObj!.parent);
+                    dragOffset = { x: globalPos.x - localPos.x, y: globalPos.y - localPos.y };
+
+                    app.stage.eventMode = 'static';
+                    app.stage.on("globalpointermove", onMove);
+                    app.stage.on("pointerup", onUp);
+                    app.stage.on("pointerupoutside", onUp);
                 });
 
-                textObj.on("globalpointermove", (e) => {
-                    if (dragOffset) {
-                        const pos = e.data.getLocalPosition(textObj!.parent);
-                        // 直接更新 Pixi 对象位置 (高性能)
-                        textObj!.x = pos.x - dragOffset.x;
-                        textObj!.y = pos.y - dragOffset.y;
-                    }
-                });
-
-                const onDragEnd = () => {
-                    if (dragOffset) {
-                        textObj!.cursor = "grab";
-                        dragOffset = null;
-                        // 拖拽结束，才同步回 React State
-                        dispatch({
-                            type: "UPDATE_SUB",
-                            payload: { id: sub.id, patch: { x: textObj!.x, y: textObj!.y } }
-                        });
+                const onMove = (e: any) => {
+                    if (dragData) {
+                        const newPos = dragData.getLocalPosition(textObj!.parent);
+                        textObj!.x = newPos.x - dragOffset.x;
+                        textObj!.y = newPos.y - dragOffset.y;
                     }
                 };
-                textObj.on("pointerup", onDragEnd);
-                textObj.on("pointerupoutside", onDragEnd);
 
+                const onUp = () => {
+                    textObj!.cursor = "grab";
+                    textObj!.alpha = 1;
+                    dragData = null;
+                    app.stage.off("globalpointermove", onMove);
+                    app.stage.off("pointerup", onUp);
+                    app.stage.off("pointerupoutside", onUp);
+                    dispatch({
+                        type: "UPDATE_SUB",
+                        payload: { id: sub.id, patch: { x: textObj!.x, y: textObj!.y } }
+                    });
+                };
                 container.addChild(textObj);
                 textMapRef.current.set(sub.id, textObj);
             }
 
-            // --- B. 如果已存在，更新属性 (Diff) ---
-            // 只有当 State 里的值和 Pixi 里的值不一样时才更新
-            // 注意：拖拽过程中，Pixi 的值是最新的，State 的值是旧的，所以要判断 dragging 状态
-            // 这里简化处理：我们信任 React State 是最终真理，但在 pointermove 中我们直接改了 Pixi 对象的 x/y
-            // 所以这里需要小心不要把正在拖拽的对象位置重置回去。
-
-            // 简单策略：只要用户在 React 面板改了样式，这里就会更新
+            // Sync
             if (textObj.text !== sub.text) textObj.text = sub.text;
             if (textObj.style.fontSize !== sub.style.fontSize) textObj.style.fontSize = sub.style.fontSize;
             if (textObj.style.fill !== sub.style.fill) textObj.style.fill = sub.style.fill;
-
-            // 位置同步：只有当【没有在拖拽】时，才从 State 同步到 Pixi
-            // 但由于 pointerdown 时我们只更新内部 offset，这里直接覆盖也是安全的，
-            // 除非 React State 此时正好被其他逻辑修改了。
-            // 为了安全，我们通常比较一下差距，防止微小抖动
-            if (Math.abs(textObj.x - sub.style.x) > 1) textObj.x = sub.style.x;
-            if (Math.abs(textObj.y - sub.style.y) > 1) textObj.y = sub.style.y;
-
+            if (selectedId !== sub.id) {
+                if (Math.abs(textObj.x - sub.style.x) > 0.1) textObj.x = sub.style.x;
+                if (Math.abs(textObj.y - sub.style.y) > 0.1) textObj.y = sub.style.y;
+            }
             textObj.visible = true;
-            textObj.alpha = selectedId === sub.id ? 1.0 : 0.8; // 选中高亮
         });
+    }, [subtitles, currentTime, selectedId]);
 
-    }, [subtitles, currentTime, selectedId]); // 依赖项
-
+    // --------------------------------------------------------
+    // 7. 渲染结构 (关键：始终渲染容器，Overlay 处理 Loading)
+    // --------------------------------------------------------
     return (
-        <div className="relative w-full h-full flex justify-center items-center">
-            {/* 隐藏的 Video 元素，作为 Pixi 的源 */}
+        <div
+            ref={containerRef}
+            className="w-full h-full bg-black relative overflow-hidden"
+        >
+            {/* Loading Overlay */}
+            {loadingState === 'loading' && (
+                <div className="absolute inset-0 z-50 flex flex-col justify-center items-center bg-black/80 text-white gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+                    <p className="text-sm text-gray-400">Loading Video...</p>
+                </div>
+            )}
+
+            {/* Error Overlay */}
+            {loadingState === 'error' && (
+                <div className="absolute inset-0 z-50 flex flex-col justify-center items-center bg-black/90 text-red-500 gap-4">
+                    <AlertCircle className="w-10 h-10" />
+                    <p>视频加载失败，请检查网络或跨域设置</p>
+                </div>
+            )}
+
+            {/* Video Element */}
             <video
                 ref={videoRef}
-                src={src}
+                // 修复 src 为空的警告
+                {...(blobUrl ? { src: blobUrl } : {})}
                 crossOrigin="anonymous"
                 playsInline
                 className="absolute top-0 left-0 w-full h-full opacity-0 pointer-events-none -z-10"
             />
-            {/* Pixi 容器 */}
-            <div ref={containerRef} className="w-full h-full" />
+
+            {/* Pixi Wrapper (由 JS 控制尺寸) */}
+            <div
+                id="pixi-inner-wrapper"
+                style={canvasStyle}
+                className="relative"
+            />
         </div>
     );
 }
