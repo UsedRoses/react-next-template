@@ -30,23 +30,26 @@ export function TranslationsProvider({
     namespaces: string[];
     resources?: any;
 }) {
-    const [instance, setInstance] = useState(i18next);
+    const [instance] = useState(i18next);
 
-    // 修复点：使用 useEffect 处理，避免渲染过程中的副作用
-    // 并且加上 if (resources) 的判断
-    if (!instance.isInitialized || instance.language !== locale) {
-        instance.changeLanguage(locale);
-    }
+    useEffect(() => {
+        if (instance.language !== locale) {
+            instance.changeLanguage(locale);
+        }
+    }, [locale, instance]);
 
-    // 核心修复：防止 crash
-    if (resources) {
+    useEffect(() => {
+        if (!resources || !locale) return;
+
         namespaces.forEach((ns) => {
-            // 检查 resources[locale] 是否真的存在
             if (resources[locale] && resources[locale][ns]) {
-                instance.addResourceBundle(locale, ns, resources[locale][ns], true, true);
+                // 检查资源是否已经存在，避免重复添加
+                if (!instance.hasResourceBundle(locale, ns)) {
+                    instance.addResourceBundle(locale, ns, resources[locale][ns], true, true);
+                }
             }
         });
-    }
+    }, [resources, locale, namespaces, instance]);
 
     return <I18nextProvider i18n={instance}>{children}</I18nextProvider>;
 }

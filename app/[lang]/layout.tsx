@@ -1,11 +1,10 @@
 import type {Metadata} from "next";
 import "../globals.css";
 import React from 'react'
-import {ThemeProvider} from "@/components/theme-provider";
+import {ThemeProvider} from "@/components/common/theme-provider";
 import {SidebarConfigProvider} from "@/contexts/sidebar-context";
 import {inter} from "@/lib/fonts";
 import {siteConfig} from "@/config/site";
-import {useTranslation} from "@/i18n/server";
 import {fallbackLng} from "@/i18n/settings";
 import {TranslationsProvider} from "@/i18n/client";
 import {dir} from 'i18next';
@@ -20,7 +19,6 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 
     // 2. 初始化翻译 (使用 'seo' namespace 或 'common'，取决于你把 metadata 翻译放在哪)
     // 如果你使用“原文即 Key”模式，可以直接写英文
-    const {t} = await useTranslation(lang, 'translation');
 
     // 3. 计算 Canonical URL (关键 SEO 逻辑)
     // 如果是默认语言(en)，Canonical 指向根目录 '/'
@@ -32,15 +30,6 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 
     return {
         metadataBase: new URL(siteConfig.url),
-
-        // 翻译标题和描述
-        title: {
-            default: t(siteConfig.name), // 或者 t('My Awesome Site')
-            template: `%s | ${t(siteConfig.name)}`,
-        },
-        description: t(siteConfig.description), // 或者 t('Best Next.js template...')
-
-        keywords: [], // 也可以翻译 t('keywords')
 
         authors: [{name: "Your Name", url: "https://your-personal-site.com"}],
         creator: "Your Name",
@@ -64,15 +53,15 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
             type: "website",
             locale: ogLocale, // 动态 locale
             url: canonicalPath, // 确保分享出去的链接也是对的
-            title: t(siteConfig.name),
-            description: t(siteConfig.description),
-            siteName: t(siteConfig.name),
+            title: siteConfig.name,
+            description: siteConfig.description,
+            siteName: siteConfig.name,
             images: [
                 {
                     url: siteConfig.ogImage,
                     width: 1200,
                     height: 630,
-                    alt: t(siteConfig.name),
+                    alt: siteConfig.name,
                 },
             ],
         },
@@ -80,8 +69,8 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
         // Twitter 卡片
         twitter: {
             card: "summary_large_image",
-            title: t(siteConfig.name),
-            description: t(siteConfig.description),
+            title: siteConfig.name,
+            description: siteConfig.description,
             images: [siteConfig.ogImage],
             creator: "@your_handle",
         },
@@ -120,14 +109,13 @@ export default async function RootLayout({
     const {lang} = await params;
 
     return (
-        <html className={`${inter.variable} antialiased`} lang={lang} dir={dir(lang)}>
+        <html className={`${inter.variable} antialiased`} lang={lang} dir={dir(lang)} suppressHydrationWarning>
         <body className={inter.className}>
         <ThemeProvider defaultTheme="system" storageKey="nextjs-ui-theme">
             <SidebarConfigProvider>
                 <TranslationsProvider
                     locale={lang}
                     namespaces={i18nNamespaces}
-                    resources={/* 这里可以是空的，因为我们在 client.tsx 里处理了加载，或者为了性能最好传进去 */ undefined}
                 >
                     {children}
                 </TranslationsProvider>

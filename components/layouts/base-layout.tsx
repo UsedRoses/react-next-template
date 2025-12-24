@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
-import { ThemeCustomizer, ThemeCustomizerTrigger } from "@/components/theme-customizer"
-import { UpgradeToProButton } from "@/components/upgrade-to-pro-button"
+import { AppSidebar } from "@/components/common/app-sidebar"
+import { SiteHeader } from "@/components/common/site-header"
+import { SiteFooter } from "@/components/common/site-footer"
+import { ThemeCustomizer, ThemeCustomizerTrigger } from "@/components/common/theme-customizer"
+import { UpgradeToProButton } from "@/components/common/upgrade-to-pro-button"
 import { useSidebarConfig } from "@/hooks/use-sidebar-config"
 import {
   SidebarInset,

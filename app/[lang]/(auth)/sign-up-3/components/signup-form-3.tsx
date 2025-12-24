@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Logo } from "@/components/logo"
+import { Logo } from "@/components/common/logo"
 import Link from "next/link"
 import Image from "next/image"
 

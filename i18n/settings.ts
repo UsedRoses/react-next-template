@@ -2,7 +2,7 @@
 import { type InitOptions } from 'i18next'; // 引入类型
 
 export const fallbackLng = 'en';
-export const languages = [fallbackLng, 'zh'];
+export const languages = [fallbackLng, 'zh', 'ja'];
 export const defaultNS = 'translation';
 export const cookieName = 'i18next';
 

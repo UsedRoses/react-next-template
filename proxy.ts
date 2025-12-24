@@ -7,7 +7,7 @@ acceptLanguage.languages(languages);
 
 export const config = {
   // 匹配所有路径，除了 api, _next, static, images, favicon 等
-  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|.*\\..*).*)',],
+  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|.*\\.png|.*\\.jpg|.*\\.svg).*)'],
 };
 
 // 函数名可以叫 proxy 也可以叫 middleware，只要是 default 导出即可

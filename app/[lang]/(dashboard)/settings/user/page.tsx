@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Upload } from "lucide-react"
 import { useRef, useState } from "react"
 import { Separator } from "@/components/ui/separator"
-import { Logo } from "@/components/logo"
+import { Logo } from "@/components/common/logo"
 
 const userFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),

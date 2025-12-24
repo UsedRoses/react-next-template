@@ -56,9 +56,6 @@ export default function Page() {
             <CTASection />
             <ContactSection />
 
-            {/*/!* Theme Customizer *!/*/}
-            {/*<LandingThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} />*/}
-            {/*<LandingThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />*/}
         </main>
     );
 }

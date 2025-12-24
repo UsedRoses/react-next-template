@@ -1,4 +1,4 @@
-import { PricingPlans } from "@/components/pricing-plans"
+import { PricingPlans } from "@/components/common/pricing-plans"
 import { FeaturesGrid } from "./components/features-grid"
 import { FAQSection } from "./components/faq-section"
 

@@ -9,7 +9,7 @@ module.exports = {
         'lib/**/*.{js,jsx,ts,tsx}', // 如果你有 lib 或 utils 文件夹
         // 也可以直接写 '/**/*.{js,jsx,ts,tsx}' 但需要排除 node_modules
     ],
-    locales: ['en', 'zh'],
+    locales: ['en', 'zh', 'ja'],
 
     // 关键配置：让英文 JSON 的值等于 Key 本身
     // 这样英文原文改了，key 也就变了，自动生效
@@ -26,9 +26,4 @@ module.exports = {
 
     // 其他优化
     createOldCatalogs: false, // 不生成 _old 文件
-    lexers: {
-        ts: ['JavascriptLexer'],
-        tsx: ['JsxLexer'],
-        default: ['JavascriptLexer'],
-    },
 };

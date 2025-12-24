@@ -1,5 +1,5 @@
 import { LoginForm2 } from "./components/login-form-2"
-import { Logo } from "@/components/logo"
+import { Logo } from "@/components/common/logo"
 import Link from "next/link"
 import Image from "next/image"
 

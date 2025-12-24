@@ -4,8 +4,8 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { CommandSearch, SearchTrigger } from "@/components/command-search"
-import { ModeToggle } from "@/components/mode-toggle"
+import { CommandSearch, SearchTrigger } from "@/components/common/command-search"
+import { ModeToggle } from "@/components/common/mode-toggle"
 
 export function SiteHeader() {
   const [searchOpen, setSearchOpen] = React.useState(false)

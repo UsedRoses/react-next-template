@@ -17,11 +17,11 @@ import {
     Users,
 } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/logo"
-import { SidebarNotification } from "@/components/sidebar-notification"
+import { Logo } from "@/components/common/logo"
+import { SidebarNotification } from "@/components/common/sidebar-notification"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/common/nav-main"
+import { NavUser } from "@/components/common/nav-user"
 import {
     Sidebar,
     SidebarContent,

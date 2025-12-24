@@ -13,7 +13,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-import { Logo } from '@/components/logo'
+import { Logo } from '@/components/common/logo'
 import { Github, Twitter, Linkedin, Youtube, Heart } from 'lucide-react'
 
 const newsletterSchema = z.object({

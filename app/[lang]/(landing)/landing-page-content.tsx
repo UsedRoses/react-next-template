@@ -15,8 +15,6 @@ import { FaqSection } from './components/faq-section'
 import { AboutSection } from './components/about-section'
 
 export function HomePageContent() {
-    // const [themeCustomizerOpen, setThemeCustomizerOpen] = React.useState(false)
-
     return (
         <div className="min-h-screen bg-background">
             {/* Main Content */}
