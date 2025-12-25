@@ -275,7 +275,7 @@ export function LandingNavbar() {
                                           className="flex items-center px-4 py-2 text-sm rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
                                           onClick={() => setIsOpen(false)}
                                       >
-                                        {t(item.title)}
+                                        {item.title}
                                       </I18nLink>
                                   ))}
                                 </div>

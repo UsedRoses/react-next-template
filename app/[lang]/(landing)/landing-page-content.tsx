@@ -21,7 +21,7 @@ export function HomePageContent() {
             <main>
                 <HeroSection />
                 <LogoCarousel />
-                <StatsSection />
+                {/*<StatsSection />*/}
                 <AboutSection />
                 <FeaturesSection />
                 <TeamSection />

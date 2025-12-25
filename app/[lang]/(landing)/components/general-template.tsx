@@ -1,5 +1,3 @@
-"use client"
-
 import React from 'react'
 import { HeroSection } from './hero-section'
 import { LogoCarousel } from './logo-carousel'
@@ -15,12 +13,14 @@ import { FaqSection } from './faq-section'
 import { AboutSection } from './about-section'
 
 interface GeneralTemplateProps {
-    heroData: React.ComponentProps<typeof HeroSection>;
-    logoData: React.ComponentProps<typeof LogoCarousel>;
-    statsData: StatItem[];
+    customSlot?: React.ReactNode;
+    heroData?: React.ComponentProps<typeof HeroSection>;
+    logoData?: React.ComponentProps<typeof LogoCarousel>;
+    statsData?: StatItem[];
 }
 
 export function GeneralPageContent({
+                                       customSlot,
                                        heroData,
                                        logoData,
                                        statsData,
@@ -29,9 +29,15 @@ export function GeneralPageContent({
         <div className="min-h-screen bg-background">
             {/* Main Content */}
             <main>
-                <HeroSection {...heroData} />
-                <LogoCarousel {...logoData}/>
-                <StatsSection items={statsData}/>
+                {/* 功能区 */}
+                {customSlot && (
+                    <section>
+                        {customSlot}
+                    </section>
+                )}
+                {heroData && <HeroSection {...heroData} />}
+                {logoData && <LogoCarousel {...logoData}/>}
+                {statsData && statsData.length > 0 && <StatsSection items={statsData}/>}
                 <AboutSection />
                 <FeaturesSection />
                 <TeamSection />
