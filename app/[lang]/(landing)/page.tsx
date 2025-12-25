@@ -1,8 +1,6 @@
 import type {Metadata} from 'next'
-import {HomePageContent} from './landing-page-content'
 import {GeneralPageContent} from './components/general-template'
 import {useTranslation} from '@/i18n/server';
-import { Package, Download, Users, Star } from 'lucide-react';
 
 // Metadata for the landing page
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {

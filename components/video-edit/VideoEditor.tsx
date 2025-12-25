@@ -6,7 +6,7 @@ import PixiPlayer from "./PixiPlayer";
 import Controls from "./Controls";
 
 interface VideoEditorProps {
-    src: string; // 视频地址
+    src?: string | File; // 视频地址
     subtitles: Subtitle[]; // 初始字幕数据
     autoPlay?: boolean; // 是否自动播放
 }
@@ -18,7 +18,7 @@ export default function VideoEditor({ src, subtitles, autoPlay = false }: VideoE
             <EditorProvider initialSubtitles={subtitles}>
 
                 {/* 上半部分：Pixi 播放器 */}
-                <div className="flex-1 min-h-[400px] relative">
+                <div className="flex-1 min-h-100 relative">
                     <PixiPlayer src={src} autoPlay={autoPlay} />
                 </div>
 

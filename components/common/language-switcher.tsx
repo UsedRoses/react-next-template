@@ -16,14 +16,14 @@ import { languages, fallbackLng } from "@/i18n/settings"
 export function LanguageSwitcher() {
     const pathname = usePathname()
     const router = useRouter()
+    // 1. 分割路径
+    const segments = pathname.split('/')
+    const firstSegment = segments[1]
 
-    const currentLocale = pathname.split('/')[1] || fallbackLng
+    const currentLocale = languages.includes(firstSegment) ? firstSegment : fallbackLng
 
     const handleLocaleChange = (newLocale: string) => {
         if (!pathname) return
-
-        // 1. 分割路径
-        const segments = pathname.split('/')
 
         // 2. 检查第一段是否是【任何】已支持的语言 (en, zh, 等)
         const isLocaleSegment = languages.includes(segments[1])
