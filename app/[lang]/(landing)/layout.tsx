@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
 import "../../globals.css";
 import React from 'react'
-import { ThemeProvider } from "@/components/common/theme-provider";
 import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import {LandingNavbar} from "@/app/[lang]/(landing)/components/navbar";
 import {LandingFooter} from "@/app/[lang]/(landing)/components/footer";
+import {TransitionProvider} from "@/components/common/transition-provider";
 
 export default function RootLayout({
   children,
@@ -14,13 +13,19 @@ export default function RootLayout({
 
   return (
       <SidebarConfigProvider>
-        {/* Navigation */}
-        <LandingNavbar />
+          <TransitionProvider>
 
-        {children}
+            {/* Navigation */}
+            <LandingNavbar />
 
-        {/* Footer */}
-        <LandingFooter />
+              <main className="page-content will-change-[transform,opacity]">
+                {children}
+              </main>
+
+            {/* Footer */}
+            <LandingFooter />
+
+          </TransitionProvider>
 
       </SidebarConfigProvider>
   );

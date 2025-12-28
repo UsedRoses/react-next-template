@@ -1,5 +1,7 @@
 "use client"
 import { LucideIcon } from 'lucide-react'
+import { I18nLink } from "@/components/common/I18nLink";
+import { Button } from "@/components/ui/premium-button"
 
 export interface MenuItem {
     title: string;
@@ -28,26 +30,32 @@ export function MegaMenu({ data }: MegaMenuProps) {
               {section.title}
             </h3>
 
-            {/* Section Links */}
-            <div className="space-y-3 lg:space-y-4">
-              {section.items.map((item) => (
-                <a
-                  key={item.title}
-                  href={item.href}
-                  className="group block space-y-1 lg:space-y-2 hover:bg-accent rounded-md p-2 lg:p-3 -mx-2 lg:-mx-3 transition-colors my-0"
-                >
-                  <div className="flex items-center gap-2 lg:gap-3">
-                    <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                      {item.title}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed ml-6 lg:ml-7">
-                    {item.description}
-                  </p>
-                </a>
-              ))}
-            </div>
+              {/* Section Links */}
+              <div className="space-y-3 lg:space-y-4">
+                  {section.items.map((item) => (
+                      <Button
+                          key={item.title}
+                          variant="ghost"
+                          size="layout"
+                          asChild
+                          className="group block whitespace-normal space-y-1 lg:space-y-2 hover:bg-accent rounded-md p-2 lg:p-3 -mx-2 lg:-mx-3 transition-colors my-0"
+                      >
+                          <I18nLink href={item.href}>
+                              {/* 这里包裹内容的容器 */}
+                              <div className="flex items-center gap-2 lg:gap-3">
+                                  <item.icon
+                                      className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0"/>
+                                  <span
+                                      className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                    {item.title}
+                                  </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed ml-6 lg:ml-7">
+                                  {item.description}
+                              </p>
+                          </I18nLink>
+                      </Button>))}
+              </div>
           </div>
         ))}
       </div>

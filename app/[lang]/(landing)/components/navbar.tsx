@@ -1,8 +1,10 @@
 "use client"
 
-import { useMemo, useState } from 'react'
-import Link from 'next/link'
+import { useMemo, useState, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { I18nLink } from "@/components/common/I18nLink"
+import { useGSAP } from "@gsap/react"
+import gsap from "gsap"
 import {
   Menu,
   LayoutDashboard,
@@ -14,9 +16,10 @@ import {
   Crown,
   BarChart3,
   Layout,
-  Building2, Rocket, Shield, Database, Palette, Settings, Zap
+  Building2, Rocket, Shield, Database, Palette, Settings, Zap, ChevronDownIcon
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/premium-button'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -62,11 +65,90 @@ export function LandingNavbar() {
   const [solutionsOpen, setSolutionsOpen] = useState(false)
   const { setTheme, theme } = useTheme()
 
-  const { t } = useTranslation('navbar')
+  const { t, i18n } = useTranslation('navbar')
+
+  const pathname = usePathname()
+  // GSAP 容器引用
+  const desktopNavRef = useRef(null)
+  const mobileSheetRef = useRef(null)
+
+  // 桌面端：初次加载时的 Stagger 动画
+  useGSAP(() => {
+    // 强制先重置所有动画元素的状态，防止状态残留导致消失
+    const targets = gsap.utils.toArray(".gsap-reveal");
+    if (targets.length === 0) return;
+    gsap.set(targets, { opacity: 0, y: 8, scale: 0.98 });
+
+    // const tl = gsap.timeline({
+    //   defaults: { ease: "power3.out", duration: 0.6 }
+    // });
+
+    // tl.to(".gsap-reveal", {
+    //   opacity: 1,
+    //   y: 0,
+    //   scale: 1,
+    //   stagger: 0.08,
+    //   delay: 0.2, // 给浏览器一点点渲染缓冲
+    //   clearProps: "all" // 关键：动画结束后清理所有内联样式，解决“消失”问题
+    // });
+
+    const timer = setTimeout(() => {
+      gsap.to(targets, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        stagger: 0.05,
+        duration: 0.5,
+        ease: "power2.out",
+        force3D: true, // 开启 3D 加速
+        onStart: () => {
+          // 动画开始时，临时降低模糊度或关闭某些滤镜以提升 FPS
+          gsap.set(desktopNavRef.current, { backdropFilter: "blur(0px)" });
+        },
+        onComplete: () => {
+          // 不要清理所有属性，只清理会导致渲染层级问题的属性
+          gsap.set(targets, { clearProps: "y,scale" });
+          if(desktopNavRef.current) {
+            gsap.set(desktopNavRef.current, { backdropFilter: "blur(20px)" });
+          }
+        }
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, {
+    dependencies: [pathname, i18n.resolvedLanguage],
+    scope: desktopNavRef
+  });
+
+  // 移动端：当侧边栏打开时的 Stagger 动画
+  useGSAP(() => {
+    if (isOpen) {
+      // 在 Sheet 打开后，稍微延迟执行，确保 Portal 已经把内容插进去了
+      const timer = setTimeout(() => {
+        const items = document.querySelectorAll(".gsap-mobile-link");
+        if (items.length > 0) {
+          gsap.fromTo(items,
+              { x: -20, opacity: 0 },
+              {
+                x: 0,
+                opacity: 1,
+                stagger: 0.05,
+                duration: 0.4,
+                ease: "power2.out",
+                overwrite: true
+              }
+          );
+        }
+      }, 100); // 100ms 的关键延迟
+
+      return () => clearTimeout(timer);
+    }
+  }, { dependencies: [isOpen] });
 
   // 使用 useMemo 将菜单配置放入组件内部
   const navigationItems = useMemo(() => [
-    { name: t('Home'), href: '/landing' },
+    { name: t('Home'), href: '/' },
     { name: t('Features'), href: '#features' },
     { name: t('Solutions'), href: '#features', hasMegaMenu: true },
     { name: t('Team'), href: '#team' },
@@ -82,7 +164,7 @@ export function LandingNavbar() {
           title: t('Free Blocks'),
           description: t('Essential UI components and sections'),
           icon: Package,
-          href: '#free-blocks'
+          href: '/clip'
       },{
         title: t('Premium Templates'),
         description: t('Complete page templates and layouts'),
@@ -149,45 +231,56 @@ export function LandingNavbar() {
   ], [t])
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/30">
+    <header ref={desktopNavRef} className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <Link href="/landing" className="flex items-center space-x-2 cursor-pointer">
+        <div className="flex items-center space-x-2 gsap-reveal">
+          <I18nLink href="/" className="flex items-center space-x-2 cursor-pointer">
             <Logo size={32} />
             <span className="font-bold">
               ShadcnStore
             </span>
-          </Link>
+          </I18nLink>
         </div>
 
         {/* Desktop Navigation */}
         <NavigationMenu className="hidden xl:flex">
           <NavigationMenuList>
             {navigationItems.map((item) => (
-              <NavigationMenuItem key={item.name}>
+              <NavigationMenuItem key={item.name} className="gsap-reveal">
                 {item.hasMegaMenu ? (
                   <>
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-active:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-primary px-4 py-2 text-sm font-medium transition-colors hover:text-primary focus:text-primary cursor-pointer">
-                      {item.name}
+                    <NavigationMenuTrigger asChild className="bg-transparent hover:bg-transparent focus:bg-transparent data-active:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-primary px-4 py-2 text-sm font-medium transition-colors hover:text-primary focus:text-primary cursor-pointer">
+                      <Button variant="ghost">
+                        {item.name}
+                        <ChevronDownIcon
+                            className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
+                            aria-hidden="true"
+                        />
+                      </Button>
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
                       <MegaMenu data={solutionsItems}/>
                     </NavigationMenuContent>
                   </>
                 ) : (
-                  <NavigationMenuLink
-                    className="group inline-flex h-10 w-max items-center justify-center px-4 py-2 text-sm font-medium transition-colors hover:text-primary focus:text-primary focus:outline-none cursor-pointer"
-                    onClick={(e: React.MouseEvent) => {
-                      e.preventDefault()
-                      if (item.href.startsWith('#')) {
-                        smoothScrollTo(item.href)
-                      } else {
-                        window.location.href = item.href
-                      }
-                    }}
+                  <NavigationMenuLink asChild
+                    className="group inline-flex h-10 w-max items-center justify-center px-4 py-2 text-sm font-medium transition-colors hover:text-primary focus:text-primary focus:outline-none"
                   >
-                    {item.name}
+                    <Button variant="ghost" asChild className="cursor-pointer">
+                      <I18nLink
+                          href={item.href}
+                          onClick={(e: React.MouseEvent) => {
+                            // 这里的逻辑依然保留，用于拦截锚点链接
+                            if (item.href.startsWith('#')) {
+                              e.preventDefault();
+                              smoothScrollTo(item.href);
+                            }
+                          }}
+                      >
+                        {item.name}
+                      </I18nLink>
+                    </Button>
                   </NavigationMenuLink>
                 )}
               </NavigationMenuItem>
@@ -197,20 +290,26 @@ export function LandingNavbar() {
 
         {/* Desktop CTA */}
         <div className="hidden xl:flex items-center space-x-2">
-          <ModeToggle variant="ghost" />
-          <LanguageSwitcher></LanguageSwitcher>
-          <Button variant="outline" asChild className="cursor-pointer">
-            <I18nLink href="/dashboard" target="_blank" rel="noopener noreferrer">
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              Dashboard
-            </I18nLink>
-          </Button>
+          <div className="gsap-reveal"><ModeToggle variant="ghost" /></div>
+          <div className="gsap-reveal"><LanguageSwitcher /></div>
+          <div className="gsap-reveal">
+            <Button variant="outline" asChild className="cursor-pointer">
+              <I18nLink href="/dashboard" target="_blank" rel="noopener noreferrer">
+                  <LayoutDashboard className="h-4 w-4 mr-2"/>
+                  Dashboard
+              </I18nLink>
+            </Button>
+          </div>
+          <div className="gsap-reveal">
           <Button variant="ghost" asChild className="cursor-pointer">
             <I18nLink href="/sign-in">Sign In</I18nLink>
           </Button>
+          </div>
+          <div className="gsap-reveal">
           <Button asChild className="cursor-pointer">
             <I18nLink href="/sign-up">Get Started</I18nLink>
           </Button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -221,11 +320,11 @@ export function LandingNavbar() {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:w-100 p-0 gap-0 [&>button]:hidden overflow-hidden flex flex-col">
+          <SheetContent side="right" ref={mobileSheetRef} className="w-full sm:w-100 p-0 gap-0 [&>button]:hidden overflow-hidden flex flex-col">
             <div className="flex flex-col h-full">
               {/* Header */}
               <SheetHeader className="space-y-0 p-4 pb-2 border-b">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 gsap-mobile-link">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Logo size={16} />
                   </div>
@@ -252,7 +351,7 @@ export function LandingNavbar() {
               <div className="flex-1 overflow-y-auto">
                 <nav className="p-6 space-y-1">
                   {navigationItems.map((item) => (
-                    <div key={item.name}>
+                    <div key={item.name} className="gsap-mobile-link">
                       {item.hasMegaMenu ? (
                         <Collapsible open={solutionsOpen} onOpenChange={setSolutionsOpen}>
                           <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer">
@@ -283,7 +382,7 @@ export function LandingNavbar() {
                           </CollapsibleContent>
                         </Collapsible>
                       ) : (
-                        <a
+                        <I18nLink
                           href={item.href}
                           className="flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={(e) => {
@@ -295,7 +394,7 @@ export function LandingNavbar() {
                           }}
                         >
                           {item.name}
-                        </a>
+                        </I18nLink>
                       )}
                     </div>
                   ))}
@@ -304,17 +403,17 @@ export function LandingNavbar() {
 
               {/* Footer Actions */}
               <div className="border-t p-6 space-y-4">
+                  {/* Primary Actions */}
+                  <div className="gsap-mobile-link">
+                    <Button variant="outline" size="lg" asChild className="w-full cursor-pointer">
+                      <I18nLink href="/dashboard">
+                        <LayoutDashboard className="size-4" />
+                        Dashboard
+                      </I18nLink>
+                    </Button>
+                  </div>
 
-                {/* Primary Actions */}
-                <div className="space-y-3">
-                  <Button variant="outline" size="lg" asChild className="w-full cursor-pointer">
-                    <I18nLink href="/dashboard">
-                      <LayoutDashboard className="size-4" />
-                      Dashboard
-                    </I18nLink>
-                  </Button>
-
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3 gsap-mobile-link">
                     <Button variant="outline" size="lg" asChild className="cursor-pointer">
                       <I18nLink href="/sign-in">Sign In</I18nLink>
                     </Button>
@@ -322,7 +421,6 @@ export function LandingNavbar() {
                       <I18nLink href="/sign-up">Get Started</I18nLink>
                     </Button>
                   </div>
-                </div>
               </div>
             </div>
           </SheetContent>

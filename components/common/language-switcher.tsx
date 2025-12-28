@@ -1,9 +1,9 @@
 'use client'
 
 import * as React from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { Languages, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/premium-button"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 // 导入你 i18n 配置中的语言列表
 import { languages, fallbackLng } from "@/i18n/settings"
+import { useTransition } from "@/components/common/transition-provider"
 
 export function LanguageSwitcher() {
     const pathname = usePathname()
-    const router = useRouter()
+    // 获取动画跳转函数
+    const transition = useTransition()
     // 1. 分割路径
     const segments = pathname.split('/')
     const firstSegment = segments[1]
@@ -24,6 +26,8 @@ export function LanguageSwitcher() {
 
     const handleLocaleChange = (newLocale: string) => {
         if (!pathname) return
+        // 如果语言没变，不触发
+        if (newLocale === currentLocale) return
 
         // 2. 检查第一段是否是【任何】已支持的语言 (en, zh, 等)
         const isLocaleSegment = languages.includes(segments[1])
@@ -44,7 +48,12 @@ export function LanguageSwitcher() {
             newPath = purePath === '/' ? `/${newLocale}` : `/${newLocale}${purePath}`
         }
 
-        router.push(newPath, { scroll: false })
+        if (transition) {
+            transition.navigateWithAnimation(newPath)
+        } else {
+            // 兜底逻辑
+            window.location.href = newPath
+        }
     }
 
     // 辅助函数：将语言代码转换为直观名称
@@ -62,11 +71,11 @@ export function LanguageSwitcher() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="cursor-pointer focus-visible:ring-0">
                     <Languages className="h-4 w-4" />
-                    <span>{getLangName(currentLocale)}</span>
+                    <span className="hidden sm:inline">{getLangName(currentLocale)}</span>
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="start" className="w-37 mt-2 border-border/50 bg-background/95 backdrop-blur-sm">
+            <DropdownMenuContent align="start" className="w-40 mt-2 border-border/50 bg-background/95 backdrop-blur-sm">
                 {languages.map((lang) => (
                     <DropdownMenuItem
                         key={lang}

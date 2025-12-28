@@ -1,51 +1,86 @@
 'use client'
 
+import React, { forwardRef, ComponentProps, useContext } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { ComponentProps } from 'react'
+import { useParams, useRouter, usePathname } from 'next/navigation' // 引入 usePathname
+import { TransitionContext } from './transition-provider'
 
-// 继承所有原生 Link 的属性类型
-interface I18nLinkProps extends ComponentProps<typeof Link> {
-    // 如果需要，可以在这里添加自定义属性
-}
+interface I18nLinkProps extends ComponentProps<typeof Link> {}
 
-export function I18nLink({ href, children, ...props }: I18nLinkProps) {
-    const params = useParams()
-    // 获取当前语言 (默认 en)
-    const lang = (params?.lang as string) || 'en'
+export const I18nLink = forwardRef<HTMLAnchorElement, I18nLinkProps>(
+    ({ href, children, onClick, onMouseEnter, ...props }, ref) => {
+        const params = useParams()
+        const router = useRouter()
+        const currentPathname = usePathname() // 获取当前实际路径
+        const transition = useContext(TransitionContext)
 
-    const getLocalizedHref = (originalHref: any): any => {
-        // 1. 如果不是字符串（比如是 URL 对象），直接返回
-        if (typeof originalHref !== 'string') return originalHref
+        const lang = (params?.lang as string) || 'en'
 
-        // 2. 如果是外部链接、邮件、电话或锚点，不处理
-        if (
-            originalHref.startsWith('http') ||
-            originalHref.startsWith('mailto:') ||
-            originalHref.startsWith('tel:') ||
-            originalHref.startsWith('#')
-        ) {
-            return originalHref
+        // --- 多语言 URL 处理逻辑 ---
+        const getLocalizedHref = (originalHref: any): string => {
+            if (typeof originalHref !== 'string') return String(originalHref)
+            if (
+                originalHref.startsWith('http') ||
+                originalHref.startsWith('mailto:') ||
+                originalHref.startsWith('tel:') ||
+                originalHref.startsWith('#')
+            ) {
+                return originalHref
+            }
+            const path = originalHref.startsWith('/') ? originalHref : `/${originalHref}`
+            if (lang === 'en') return path
+            return path === '/' ? `/${lang}` : `/${lang}${path}`
         }
 
-        // 3. 规范化路径：确保以 / 开头
-        const path = originalHref.startsWith('/') ? originalHref : `/${originalHref}`
+        const localizedHref = getLocalizedHref(href)
 
-        // 4. 核心逻辑：默认语言(en)不加前缀，其他(zh)加前缀
-        if (lang === 'en') {
-            return path
+        // --- 性能优化：悬停预加载 ---
+        const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+            onMouseEnter?.(e)
+            if (typeof localizedHref === 'string' && !localizedHref.startsWith('#')) {
+                router.prefetch(localizedHref)
+            }
         }
 
-        // 处理根路径 / 避免生成 //zh
-        return path === '/' ? `/${lang}` : `/${lang}${path}`
+        const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+            if (onClick) onClick(e);
+
+            // 1. 如果是特殊链接，不处理
+            if (props.target === '_blank' || localizedHref.startsWith('#') || e.metaKey || e.ctrlKey) {
+                return
+            }
+
+            const normalize = (p: string) => p.replace(/\/$/, "") || "/";
+            const isSamePath = normalize(localizedHref) === normalize(currentPathname);
+
+            if (isSamePath) {
+                e.preventDefault();
+                // 如果是在当前页点击，我们可以做一个微弱的震动效果或者干脆什么都不做
+                return;
+            }
+
+            e.preventDefault()
+
+            // 3. 执行动画跳转
+            if (transition) {
+                transition.navigateWithAnimation(localizedHref)
+            } else {
+                router.push(localizedHref)
+            }
+        }
+
+        return (
+            <Link
+                {...props}
+                ref={ref}
+                href={localizedHref}
+                onClick={handleClick}
+                onMouseEnter={handleMouseEnter}
+            >
+                {children}
+            </Link>
+        )
     }
+)
 
-    return (
-        <Link
-            {...props} // 这里会将 target, rel, className, prefetch 等属性原封不动传给 Link
-            href={getLocalizedHref(href)}
-        >
-            {children}
-        </Link>
-    )
-}
+I18nLink.displayName = 'I18nLink'
