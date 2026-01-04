@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import Link from "next/link"
+import { I18nLink } from "@/components/common/I18nLink"
 import { usePathname } from "next/navigation"
 
 import {
@@ -71,13 +71,13 @@ export function NavMain({
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild className="cursor-pointer" isActive={pathname === subItem.url}>
-                            <Link
+                            <I18nLink
                               href={subItem.url}
                               target={(item.title === "Auth Pages" || item.title === "Errors") ? "_blank" : undefined}
                               rel={(item.title === "Auth Pages" || item.title === "Errors") ? "noopener noreferrer" : undefined}
                             >
                               <span>{subItem.title}</span>
-                            </Link>
+                            </I18nLink>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
@@ -86,10 +86,10 @@ export function NavMain({
                 </>
               ) : (
                 <SidebarMenuButton asChild tooltip={item.title} className="cursor-pointer" isActive={pathname === item.url}>
-                  <Link href={item.url}>
+                  <I18nLink href={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
-                  </Link>
+                  </I18nLink>
                 </SidebarMenuButton>
               )}
             </SidebarMenuItem>

@@ -1,0 +1,12 @@
+FROM node:24-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /code
+
+# 启用 corepack 并安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 拷贝依赖描述文件
+COPY package.json pnpm-lock.yaml* ./
+
+# 使用 pnpm 安装依赖
+RUN pnpm install --frozen-lockfile

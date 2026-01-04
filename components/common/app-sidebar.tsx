@@ -16,7 +16,7 @@ import {
     LayoutTemplate,
     Users,
 } from "lucide-react"
-import Link from "next/link"
+import { I18nLink } from "@/components/common/I18nLink"
 import { Logo } from "@/components/common/logo"
 import { SidebarNotification } from "@/components/common/sidebar-notification"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -50,6 +50,11 @@ const data = {
                 {
                     title: "Dashboard 2",
                     url: "/dashboard-2",
+                    icon: LayoutPanelLeft,
+                },
+                {
+                    title: "Editing",
+                    url: "/editing",
                     icon: LayoutPanelLeft,
                 },
             ],
@@ -216,7 +221,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard">
+                            <I18nLink href="/dashboard">
                                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                     <Logo size={24} className="text-current" />
                                 </div>
@@ -224,7 +229,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <span className="truncate font-medium">ShadcnStore</span>
                                     <span className="truncate text-xs">Admin Dashboard</span>
                                 </div>
-                            </Link>
+                            </I18nLink>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

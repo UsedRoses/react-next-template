@@ -79,19 +79,6 @@ export function LandingNavbar() {
     if (targets.length === 0) return;
     gsap.set(targets, { opacity: 0, y: 8, scale: 0.98 });
 
-    // const tl = gsap.timeline({
-    //   defaults: { ease: "power3.out", duration: 0.6 }
-    // });
-
-    // tl.to(".gsap-reveal", {
-    //   opacity: 1,
-    //   y: 0,
-    //   scale: 1,
-    //   stagger: 0.08,
-    //   delay: 0.2, // 给浏览器一点点渲染缓冲
-    //   clearProps: "all" // 关键：动画结束后清理所有内联样式，解决“消失”问题
-    // });
-
     const timer = setTimeout(() => {
       gsap.to(targets, {
         opacity: 1,

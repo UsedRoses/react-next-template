@@ -1,0 +1,31 @@
+# 1. 引用刚才打好的带 pnpm 的基础镜像
+FROM registry-vpc.us-west-1.aliyuncs.com/zingfront/next-base:node24 AS builder
+WORKDIR /code
+
+# 2. 再次确保 pnpm 可用 (环境变量)
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 3. 复制代码 (因为有了 .dockerignore，这里只会拷贝源码，不会拷贝 node_modules)
+COPY . .
+
+# 4. 执行编译
+# 如果你的 package.json 里的 build 指令是 "next build"，
+# 那么这里运行 npm run build 或 pnpm run build 都可以
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm run build
+
+# --- 运行阶段 (Runner) ---
+FROM node:24-alpine AS runner
+WORKDIR /code
+
+ENV NODE_ENV=production
+ENV PORT=80
+ENV HOSTNAME="0.0.0.0"
+
+# 只拷贝编译产物
+COPY --from=builder /code/public ./public
+COPY --from=builder /code/.next/static ./.next/static
+COPY --from=builder /code/.next/standalone ./
+
+EXPOSE 80
+CMD ["node", "server.js"]

@@ -8,6 +8,7 @@ import {siteConfig} from "@/config/site";
 import {fallbackLng} from "@/i18n/settings";
 import {TranslationsProvider} from "@/i18n/client";
 import {dir} from 'i18next';
+import {Toaster} from "sonner";
 
 type Props = {
     params: { lang: string };
@@ -104,7 +105,7 @@ export default async function RootLayout({
                                              params,
                                          }: {
     children: React.ReactNode;
-    params: { lang: string };
+    params: Promise<{ lang: string }>;
 }) {
     const {lang} = await params;
 
@@ -118,6 +119,8 @@ export default async function RootLayout({
                     namespaces={i18nNamespaces}
                 >
                     {children}
+
+                    <Toaster position="top-center" richColors />
                 </TranslationsProvider>
             </SidebarConfigProvider>
         </ThemeProvider>

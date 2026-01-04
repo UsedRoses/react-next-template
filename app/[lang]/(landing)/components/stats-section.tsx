@@ -1,5 +1,3 @@
-"use client"
-
 import * as Icons from 'lucide-react'
 import {Card, CardContent} from '@/components/ui/card'
 import {DotPattern} from '@/components/common/dot-pattern'

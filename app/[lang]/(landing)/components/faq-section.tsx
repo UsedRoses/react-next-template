@@ -1,5 +1,3 @@
-"use client"
-
 import { CircleHelp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
