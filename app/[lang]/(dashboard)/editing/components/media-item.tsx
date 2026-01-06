@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {Play, FileVideo, Trash2} from "lucide-react";
+import { FileVideo, Trash2} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {Button} from "@/components/ui/premium-button";
-import {MediaAsset} from "@/app/[lang]/(dashboard)/editing/components/editor-context";
+import { Button } from "@/components/ui/premium-button";
+import { MediaAsset } from "@/hooks/use-editor-store";
 
 interface MediaItemProps {
     asset: MediaAsset;

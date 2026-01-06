@@ -2,24 +2,21 @@
 
 import React from "react";
 import {
-    Plus, Play, RotateCcw, RotateCw,
-    Scissors, Trash2, ZoomIn, ZoomOut,
+    Plus,
     Download, Type, Music, Settings2,
-    Film, Share2, ChevronDown,
-    Undo2, Redo2, Maximize2,
+    Share2, ChevronDown,
+    Undo2, Redo2,
     Video
 } from "lucide-react";
 import { Button } from "@/components/ui/premium-button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {MediaLibrary} from "@/app/[lang]/(dashboard)/editing/components/media-library";
-import {EditorProvider} from "@/app/[lang]/(dashboard)/editing/components/editor-context";
-import {Timeline} from "@/app/[lang]/(dashboard)/editing/components/time-line";
+import { MediaLibrary } from "@/app/[lang]/(dashboard)/editing/components/media-library";
+import { Timeline } from "@/app/[lang]/(dashboard)/editing/components/timeline/main";
 
 export default function VideoEditorPage() {
 
     return (
-        <EditorProvider>
             <div className="@container/main flex flex-1 flex-col px-4 md:px-6">
                 {/* 保持你原有的所有样式类名 */}
             <div className="rounded-md border h-[calc(100vh)] flex flex-col w-full bg-background text-foreground overflow-hidden font-sans py-4 text-xs text-balance">
@@ -62,7 +59,7 @@ export default function VideoEditorPage() {
                     </div>
 
                     {/* 3. 中间核心：工作区 */}
-                    <main className="flex-1 flex flex-col overflow-hidden border rounded-md md:px-5 md:pt-5 2xl:px-18 2xl:pt-18 bg-background">
+                    <main className="flex-1 flex flex-col overflow-hidden border rounded-md md:px-5 md:py-5 2xl:px-18 2xl:py-18 bg-background">
                         {/* 修复：添加 flex-1 和 min-h-0 确保父容器可以被压缩，不撑破外层 */}
                         <div className="flex-1 flex flex-col relative rounded-2xl min-h-0">
 
@@ -77,22 +74,6 @@ export default function VideoEditorPage() {
                                 </div>
                             </div>
 
-                            {/* 3.2 播放控制 - 使用 shrink-0 确保它永远不会被挤小 */}
-                            <div className="flex shrink-0 items-center justify-center rounded-b-md py-2 2xl:py-9">
-                                <div className="flex items-center gap-6 justify-items-center">
-                                    <div className="flex items-center gap-3">
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 2xl:h-18 2xl:w-18 text-muted-foreground">
-                                            <RotateCcw className="w-6! h-6! 2xl:w-9! 2xl:h-9! shrink-0"/>
-                                        </Button>
-                                        <Button size="icon" className="h-10 w-10 2xl:h-20 2xl:w-20 rounded-full bg-primary text-primary-foreground shadow-md">
-                                            <Play className="w-6! h-6! 2xl:w-10! 2xl:h-10! shrink-0 fill-current" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 2xl:h-18 2xl:w-18 text-muted-foreground">
-                                            <RotateCw className="w-6! h-6! 2xl:w-9! 2xl:h-9! shrink-0" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </main>
 
@@ -117,6 +98,5 @@ export default function VideoEditorPage() {
 
             </div>
         </div>
-        </EditorProvider>
     );
 }

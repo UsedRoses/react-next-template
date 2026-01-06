@@ -1,21 +1,24 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { ImageIcon, UploadCloud, Film } from "lucide-react";
 import { Button } from "@/components/ui/premium-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { MediaItem } from "./media-item";
-import { MediaAsset, useEditor } from "@/app/[lang]/(dashboard)/editing/components/editor-context";
-import {getVideoMetadata} from "@/lib/video";
+import { getVideoMetadata } from "@/lib/video";
+import { MediaAsset, useEditorStore } from "@/hooks/use-editor-store";
 
 const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
 
-export function MediaLibrary() {
+export const MediaLibrary = memo(() => {
     const { t } = useTranslation("editing");
-    const { state, dispatch } = useEditor();
-    const { mediaList } = state;
+    const mediaList = useEditorStore(state => state.mediaList);
+    const addAsset = useEditorStore(state => state.addAsset);
+
+    const removeAsset = useEditorStore(state => state.removeAsset);
+    const removeClip = useEditorStore(state => state.removeClip);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -44,7 +47,7 @@ export function MediaLibrary() {
             };
 
             // 3. 事件驱动：发出“添加素材”的指令
-            dispatch({ type: "ADD_ASSET", payload: asset });
+            addAsset(asset)
         }
 
         // 清空 input，保证同一个文件删了能再传
@@ -54,8 +57,8 @@ export function MediaLibrary() {
     // --- 4. 行为：删除素材 ---
     const handleRemoveFile = (id: string) => {
         // 同时清理素材库和轨道上的片段
-        dispatch({ type: "REMOVE_ASSET", payload: id });
-        dispatch({ type: "REMOVE_ASSETS_CLIPS", payload: id });
+        removeAsset(id)
+        removeClip(id)
     };
 
     // --- 5. 拖拽 UI 状态 (这是局部 UI 状态，保留 useState 是正确的) ---
@@ -107,7 +110,7 @@ export function MediaLibrary() {
                 {/* 上传交互区域：点击触发 Input，同时也是拖拽响应区 */}
                 <Button
                     variant="outline"
-                    className="cursor-pointer w-full h-24 flex flex-col gap-2 border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                    className="cursor-pointer w-full h-24 flex flex-col gap-2 border-2 border-dashed rounded-xl border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-all group"
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <UploadCloud className={`w-6 h-6 transition-transform ${isDragging ? 'scale-110 text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
@@ -152,4 +155,4 @@ export function MediaLibrary() {
             </ScrollArea>
         </aside>
     );
-}
+})
