@@ -104,7 +104,11 @@ export const useEditorStore = create<EditorState>()(
         setPlaying: (playing) => set({ isPlaying: playing }),
         setCurrentTime: (time) => set({ currentTime: time }),
         setDuration: (duration) => set({ duration }),
-        setDraggingSeek: (dragging) => set({ isDraggingSeek: dragging }),
+        setDraggingSeek: (dragging) => set((state) => ({
+            isDraggingSeek: dragging,
+            // 关键：一旦开始拖拽，立即暂停，防止渲染循环冲突
+            isPlaying: dragging ? false : state.isPlaying
+        })),
         selectElement: (id) => set({ selectedId: id }),
 
         // --- 素材管理 ---
@@ -143,7 +147,8 @@ export const useEditorStore = create<EditorState>()(
 
             set({
                 clips: [...clips, newClip],
-                duration: Math.max(duration, startTime + newClip.duration + 300)
+                duration: Math.max(duration, startTime + newClip.duration + 300),
+                isPlaying: false // 关键：添加新素材时暂停，给解码器缓冲时间
             });
         },
 
@@ -155,7 +160,8 @@ export const useEditorStore = create<EditorState>()(
         // --- 磁吸拖拽逻辑 ---
         startDragClip: (id, mouseX, startTime) => set({
             selectedId: id,
-            draggingClip: { id, startMouseX: mouseX, originalStartTime: startTime }
+            draggingClip: { id, startMouseX: mouseX, originalStartTime: startTime },
+            isPlaying: false  // 关键：拖素材时必须暂停
         }),
 
         moveClipRealtime: (mouseX, trackId) => {

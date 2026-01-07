@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MediaLibrary } from "@/app/[lang]/(dashboard)/editing/components/media-library";
 import { Timeline } from "@/app/[lang]/(dashboard)/editing/components/timeline/main";
+import { VideoPlayer } from "@/components/video/VideoPlayer";
 
 export default function VideoEditorPage() {
 
@@ -67,9 +68,7 @@ export default function VideoEditorPage() {
                             <div className="flex-1 min-h-0 flex items-center justify-center">
                                 <div className="w-full h-full  flex items-center justify-center">
                                     <div className="relative aspect-video max-w-full max-h-full w-full bg-black rounded-3xl shadow-2xl border border-border overflow-hidden flex items-center justify-center">
-                                        <div className="text-muted-foreground/30 text-sm italic">
-                                            Video Player Area
-                                        </div>
+                                        <VideoPlayer />
                                     </div>
                                 </div>
                             </div>
