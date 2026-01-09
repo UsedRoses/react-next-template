@@ -4,7 +4,7 @@ import { type InitOptions } from 'i18next'; // 引入类型
 export const fallbackLng = 'en';
 export const languages = [fallbackLng, 'zh', 'ja'];
 export const defaultNS = 'translation';
-export const cookieName = 'i18next';
+export const cookieName = 'languages';
 
 // 👇 加上 : InitOptions 返回类型声明
 export function getOptions(lng = fallbackLng, ns = defaultNS): InitOptions {

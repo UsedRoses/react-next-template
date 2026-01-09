@@ -19,17 +19,30 @@ export default function proxy(req: NextRequest) {
 
   // 只要路径里包含“.”，通常说明它是一个文件（如 .png, .txt, .xml）
   // 这种文件不需要经过国际化重定向，直接放行
-  if (pathname.includes('.')) {
-    return NextResponse.next();
+  if (pathname.match(/\.(png|jpg|jpeg|svg|css|js|json|xml|ico)$/)) {
+    return NextResponse.next()
   }
 
-  // 1. 判断路径中是否已经包含了语言前缀
+  // 针对默认语言 (en) 的特殊处理：强制“去前缀” (SEO 优化)
+  // 如果用户手动访问 /en 或 /en/about，我们要把他踢回 / 或 /about
+  // 假设 fallbackLng 是 'en'
+  if (pathname.startsWith(`/${fallbackLng}/`) || pathname === `/${fallbackLng}`) {
+    // 去掉 /en
+    const newUrl = new URL(
+        pathname.replace(`/${fallbackLng}`, '') || '/',
+        req.url
+    )
+    // 308 永久重定向 (SEO 友好)
+    return NextResponse.redirect(newUrl)
+  }
+
+  // 判断路径中是否已经包含了语言前缀
   const pathnameHasLocale = languages.some(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
   if (pathnameHasLocale) {
-    return NextResponse.next();
+    return  NextResponse.next()
   }
 
   // 2. 获取语言偏好逻辑
@@ -38,7 +51,9 @@ export default function proxy(req: NextRequest) {
   if (!lng) lng = acceptLanguage.get(req.headers.get('Accept-Language'));
   if (!lng) lng = fallbackLng;
 
-  // 如果路径没前缀，Rewrite 到默认语言（例如 /en/xxx）
-  // URL 保持不变，但内部渲染 /en 路由的内容
-  return NextResponse.rewrite(new URL(`/en${pathname}`, req.url));
+  if (lng !== fallbackLng) {
+    return NextResponse.redirect(new URL(`/${lng}${pathname}`, req.url))
+  }
+
+  return NextResponse.rewrite(new URL(`/${fallbackLng}${pathname}`, req.url))
 }

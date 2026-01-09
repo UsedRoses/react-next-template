@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     // true: /about -> /about/
     // false: /about/ -> /about
     // 建议：设为 true。这对 SEO 比较友好，避免因 URL 结尾不一致导致搜索引擎认为是两个页面 (Duplicate Content)。
-    trailingSlash: true,
+    trailingSlash: false,
 
     // 3. 图片优化 (Core Web Vitals 核心)
     // Google 非常看重 LCP (最大内容渲染时间)，优化图片是提分的关键。

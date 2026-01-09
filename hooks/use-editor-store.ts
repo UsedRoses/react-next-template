@@ -81,6 +81,13 @@ interface EditorState {
     // 字幕操作
     addSubtitle: (sub: Subtitle) => void;
     updateSubtitle: (id: string, patch: Partial<Subtitle>) => void;
+
+    // 记录当前预测的落点（用于渲染描边框）
+    dropPlaceholder: {
+        trackId: string;
+        startTime: number;
+        duration: number;
+    } | null;
 }
 
 // --- 3. 创建 Store ---
@@ -99,6 +106,7 @@ export const useEditorStore = create<EditorState>()(
         selectedId: null,
         draggingClip: null,
         snapLineTime: null,
+        dropPlaceholder: null,
 
         // --- 基础控制 Actions ---
         setPlaying: (playing) => set({ isPlaying: playing }),
@@ -165,58 +173,116 @@ export const useEditorStore = create<EditorState>()(
         }),
 
         moveClipRealtime: (mouseX, trackId) => {
-            const { draggingClip, clips, currentTime } = get();
+            const { draggingClip, clips } = get();
             if (!draggingClip) return;
 
             const TICK_GAP = 120;
             const PIXELS_PER_SECOND = TICK_GAP / 60;
 
+            // 1. 计算物理偏移
             const deltaX = mouseX - draggingClip.startMouseX;
             const deltaTime = deltaX / PIXELS_PER_SECOND;
-            let newStartTime = Math.max(0, draggingClip.originalStartTime + deltaTime);
 
-            // 磁吸计算
-            const SNAP_THRESHOLD_SEC = 10 / PIXELS_PER_SECOND;
-            const draggingClipObj = clips.find(c => c.id === draggingClip.id);
-            if (!draggingClipObj) return;
+            // --- 核心修复 1：保留未受限的原始时间用于计算排序 ---
+            // 允许负数，这样中心点才能小于第一个视频的中心点
+            const rawStartTime = draggingClip.originalStartTime + deltaTime;
 
-            const clipDuration = draggingClipObj.duration;
-            const newEndTime = newStartTime + clipDuration;
+            // 这是给 UI 显示用的受限时间 (不能小于 0)
+            const clampedStartTime = Math.max(0, rawStartTime);
 
-            const snapPoints = [0, currentTime];
-            clips.forEach(c => {
-                if (c.id === draggingClip.id) return;
-                snapPoints.push(c.startTime, c.startTime + c.duration);
+            const activeClip = clips.find(c => c.id === draggingClip.id);
+            if (!activeClip) return;
+            const finalTrackId = trackId || activeClip.trackId;
+
+            // 2. 获取同轨道其他 Clips
+            const otherClips = clips
+                .filter(c => c.trackId === finalTrackId && c.id !== draggingClip.id)
+                .sort((a, b) => a.startTime - b.startTime);
+
+            // 3. 计算插入点 (基于未受限的中心点)
+            const activeMid = rawStartTime + (activeClip.duration / 2);
+
+            let insertIndex = otherClips.length;
+
+            for (let i = 0; i < otherClips.length; i++) {
+                const target = otherClips[i];
+                const targetMid = target.startTime + (target.duration / 2);
+
+                // 只要我的物理中心点超过了你的中心点，我就插你前面
+                if (activeMid < targetMid) {
+                    insertIndex = i;
+                    break;
+                }
+            }
+
+            // 4. 生成新顺序队列
+            const newOrderClips = [...otherClips];
+            newOrderClips.splice(insertIndex, 0, activeClip);
+
+            // 5. 紧凑堆叠算法 (Compact Stacking / Flow Layout)
+            // 像 iPhone 图标一样，从 0 开始挨个往后排
+            let cursorTime = 0;
+            const shifts = new Map<string, number>();
+            let dropTargetTime = 0; // 记录松手后应该吸附的位置
+
+            newOrderClips.forEach(clip => {
+                if (clip.id === draggingClip.id) {
+                    // 正在拖拽的这个：记录它理论上该在的位置
+                    dropTargetTime = cursorTime;
+                } else {
+                    // 其他 Clip：如果不现在的开始时间不等于堆叠位置，记录位移
+                    if (clip.startTime !== cursorTime) {
+                        shifts.set(clip.id, cursorTime);
+                    }
+                }
+                // 游标累加，不留空隙
+                cursorTime += clip.duration;
             });
 
-            let bestSnapTime = newStartTime;
-            let minDiff = SNAP_THRESHOLD_SEC;
-            let activeSnapLine: number | null = null;
-
-            snapPoints.forEach(point => {
-                const diffStart = Math.abs(newStartTime - point);
-                if (diffStart < minDiff) {
-                    minDiff = diffStart;
-                    bestSnapTime = point;
-                    activeSnapLine = point;
-                }
-                const diffEnd = Math.abs(newEndTime - point);
-                if (diffEnd < minDiff) {
-                    minDiff = diffEnd;
-                    bestSnapTime = point - clipDuration;
-                    activeSnapLine = point;
-                }
-            });
-
+            // 6. 应用更新
             set({
-                snapLineTime: activeSnapLine,
-                clips: clips.map(c =>
-                    c.id === draggingClip.id ? { ...c, startTime: bestSnapTime, trackId: trackId || c.trackId } : c
-                )
+                // 借用 snapLineTime 暂存一下松手后的目标时间(可选技巧)
+                // 或者专门加一个 dropTargetTime 状态，这里我们利用闭包在 stopDragClip 里处理不太方便
+                // 所以我们最好把这个 dropTargetTime 存到 dropPlaceholder 里
+                dropPlaceholder: {
+                    trackId: finalTrackId,
+                    startTime: dropTargetTime, // 这里的 StartTime 是松手后会对齐的时间
+                    duration: activeClip.duration
+                },
+
+                clips: clips.map(c => {
+                    // A. 拖拽物：位置跟随鼠标 (clamped)，但轨道跟随计算结果
+                    if (c.id === draggingClip.id) {
+                        return { ...c, startTime: clampedStartTime, trackId: finalTrackId };
+                    }
+                    // B. 被挤开的物：应用堆叠计算出的新位置
+                    if (shifts.has(c.id)) {
+                        return { ...c, startTime: shifts.get(c.id)! };
+                    }
+                    return c;
+                })
             });
         },
 
-        stopDragClip: () => set({ draggingClip: null, snapLineTime: null }),
+        stopDragClip: () => {
+            const { draggingClip, dropPlaceholder, clips } = get();
+            if (!draggingClip) return;
+
+            set({
+                draggingClip: null,
+                dropPlaceholder: null, // 清理占位数据
+                clips: clips.map(c =>
+                    c.id === draggingClip.id
+                        ? {
+                            ...c,
+                            // 如果有计算好的落点，就去落点；否则回原位或保持当前
+                            startTime: dropPlaceholder ? dropPlaceholder.startTime : c.startTime,
+                            trackId: dropPlaceholder ? dropPlaceholder.trackId : c.trackId
+                        }
+                        : c
+                )
+            });
+        },
 
         // --- 字幕 ---
         addSubtitle: (sub) => set((state) => ({ subtitles: [...state.subtitles, sub] })),

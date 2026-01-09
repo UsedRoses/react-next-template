@@ -44,8 +44,7 @@ export default async function LandingPage({params}: { params: Promise<{ lang: st
             badge: t('New: Premium Template Collection'),
             title: (
                 <>
-                    {t('Build Better')}
-                    <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                       {t(' Video Applications ')}
                     </span>
                     {t('with Ease')}

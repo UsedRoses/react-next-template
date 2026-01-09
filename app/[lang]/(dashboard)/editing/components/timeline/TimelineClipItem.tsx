@@ -18,10 +18,9 @@ export const TimelineClipItem = memo(({ clip, asset, isSelected, isDragging }: a
             onPointerDown={handlePointerDown}
             className={`
             absolute inset-y-1 rounded-md overflow-hidden flex items-center select-none touch-none transition-all duration-75
-            ${isDragging ? "transition-none" : "transition-all duration-150"}
             ${!isSelected && !isDragging ? "z-10" : ""}
             ${isSelected && !isDragging ? "border-primary ring-2 ring-primary/20 z-30 shadow-lg" : ""}
-            ${isDragging ? "border-primary opacity-70 z-50 cursor-grabbing bg-primary/20" : "cursor-grab"}
+            ${isDragging ? "transition-none border-primary opacity-70 z-50 cursor-grabbing bg-primary/20" : "cursor-grab z-20 transition-transform duration-300 ease-out"}
             `}
             style={{
                 width: (clip.duration / 60) * TICK_GAP,

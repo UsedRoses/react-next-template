@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 // 导入你 i18n 配置中的语言列表
-import { languages, fallbackLng } from "@/i18n/settings"
+import { languages, fallbackLng, cookieName } from "@/i18n/settings"
 import { useTransition } from "@/components/common/transition-provider"
 
 export function LanguageSwitcher() {
@@ -23,6 +23,11 @@ export function LanguageSwitcher() {
     const firstSegment = segments[1]
 
     const currentLocale = languages.includes(firstSegment) ? firstSegment : fallbackLng
+
+    const getCookie = (name: string) => {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+        return match ? match[2] : null
+    }
 
     const handleLocaleChange = (newLocale: string) => {
         if (!pathname) return
@@ -47,6 +52,24 @@ export function LanguageSwitcher() {
         } else {
             newPath = purePath === '/' ? `/${newLocale}` : `/${newLocale}${purePath}`
         }
+
+        // 如果 URL 里的语言跟 Cookie 不一样，就更新 Cookie
+        const currentCookieValue = getCookie(cookieName)
+        if (currentCookieValue !== newLocale) {
+            const days = 365
+            const date = new Date()
+            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+            const expires = '; expires=' + date.toUTCString()
+
+            // 设置 Cookie
+            document.cookie = `${cookieName}=${newLocale}${expires}; path=/`
+        }
+
+        const days = 365
+        const date = new Date()
+        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+        const expires = '; expires=' + date.toUTCString()
+        document.cookie = `${cookieName}=${newLocale}${expires}; path=/`
 
         if (transition) {
             transition.navigateWithAnimation(newPath)

@@ -9,13 +9,13 @@ import {fallbackLng} from "@/i18n/settings";
 import {TranslationsProvider} from "@/i18n/client";
 import {dir} from 'i18next';
 import {Toaster} from "sonner";
+import {GoogleAnalytics} from "@next/third-parties/google";
 
 type Props = {
     params: { lang: string };
 };
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
-    // 1. 获取当前语言 (Next.js 15+ 需要 await params)
     const {lang} = await params;
 
     // 2. 初始化翻译 (使用 'seo' namespace 或 'common'，取决于你把 metadata 翻译放在哪)
@@ -32,7 +32,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
     return {
         metadataBase: new URL(siteConfig.url),
 
-        authors: [{name: "Your Name", url: "https://your-personal-site.com"}],
+        authors: [{name: "Your Name", url: "https://videoclip.com"}],
         creator: "Your Name",
 
         // 核心修改：SEO 链接配置
@@ -44,6 +44,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 
             // 告诉搜索引擎存在其他语言版本 (Hreflang)
             languages: {
+                'x-default': '/',
                 'en': '/',    // 英文对应根路径
                 'zh': '/zh',  // 中文对应 /zh
             },
@@ -124,6 +125,8 @@ export default async function RootLayout({
                 </TranslationsProvider>
             </SidebarConfigProvider>
         </ThemeProvider>
+
+        {/*<GoogleAnalytics gaId="G-XXXXXXXXXX" />*/}
         </body>
         </html>
     );
