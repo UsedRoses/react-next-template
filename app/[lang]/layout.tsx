@@ -10,6 +10,7 @@ import {TranslationsProvider} from "@/i18n/client";
 import {dir} from 'i18next';
 import {Toaster} from "sonner";
 import {GoogleAnalytics} from "@next/third-parties/google";
+import {getTranslation} from "@/i18n/server";
 
 type Props = {
     params: { lang: string };
@@ -98,7 +99,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
     };
 }
 
-const i18nNamespaces = ['translation'];
+const i18nNamespaces = ['translation', 'landing', 'components', 'navbar'];
 
 
 export default async function RootLayout({
@@ -110,14 +111,17 @@ export default async function RootLayout({
 }) {
     const {lang} = await params;
 
+    const { resources } = await getTranslation(lang, i18nNamespaces);
+
     return (
         <html className={`${inter.variable} antialiased`} lang={lang} dir={dir(lang)} suppressHydrationWarning>
         <body className={inter.className}>
-        <ThemeProvider defaultTheme="system" storageKey="nextjs-ui-theme">
+        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
             <SidebarConfigProvider>
                 <TranslationsProvider
                     locale={lang}
                     namespaces={i18nNamespaces}
+                    resources={resources}
                 >
                     {children}
 

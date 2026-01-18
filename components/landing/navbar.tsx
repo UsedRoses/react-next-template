@@ -43,7 +43,7 @@ import {
 import { Logo } from '@/components/common/logo'
 import { MegaMenu } from '@/components/landing/mega-menu'
 import { ModeToggle } from '@/components/common/mode-toggle'
-import { useTheme } from '@/hooks/use-theme'
+import { useTheme } from "next-themes"
 import { LanguageSwitcher } from "@/components/common/language-switcher";
 import { useTranslation} from 'react-i18next';
 
@@ -151,7 +151,7 @@ export function LandingNavbar() {
           title: t('Free Blocks'),
           description: t('Essential UI components and sections'),
           icon: Package,
-          href: '/clip'
+          href: '/test-video'
       },{
         title: t('Premium Templates'),
         description: t('Complete page templates and layouts'),
@@ -222,7 +222,7 @@ export function LandingNavbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2 gsap-reveal">
-          <I18nLink href="/" className="flex items-center space-x-2 cursor-pointer">
+          <I18nLink href="/public" className="flex items-center space-x-2 cursor-pointer">
             <Logo size={32} />
             <span className="font-bold">
               ShadcnStore

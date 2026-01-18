@@ -1,9 +1,5 @@
 import { Card } from '@/components/ui/card'
 
-interface LogoCarouselProps {
-  subtitle?: React.ReactNode;
-}
-
 // Simple icon component for company logos
 const SimpleIcon = ({ iconSlug, size = 24 }: { iconSlug: string; size?: number }) => {
   const iconMap = {
@@ -61,14 +57,24 @@ const techCompanies = [
   { name: 'GitHub', id: 'github' },
 ] as const
 
-export function LogoCarousel({ subtitle }: LogoCarouselProps) {
+export interface LogoCarouselProps {
+  // 只需要接收 title，不再需要接收 logos 数组
+  data?: {
+    title?: string;
+  };
+}
+
+export function LogoCarousel({ data }: LogoCarouselProps) {
+
   return (
     <section className="pb-12 sm:pb-16 lg:pb-20 pt-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
+          {data?.title && (
           <p className="text-sm font-medium text-muted-foreground mb-8">
-            {subtitle}
+            {data.title}
           </p>
+          )}
 
           {/* Logo Carousel with Fade Effect */}
           <div className="relative">

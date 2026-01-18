@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             {
                 protocol: 'https',
-                hostname: 'your-s3-bucket.com',
+                hostname: 'placehold.co',
             },
             {
                 protocol: 'https',

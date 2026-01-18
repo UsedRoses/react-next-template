@@ -11,10 +11,10 @@ export interface StatItem {
 }
 
 interface StatsSectionProps {
-    items: StatItem[];
+    data: StatItem[];
 }
 
-export function StatsSection({items}: StatsSectionProps) {
+export function StatsSection({data}: StatsSectionProps) {
     return (
         <section className="py-12 sm:py-16 relative">
             {/* Background with transparency */}
@@ -26,8 +26,8 @@ export function StatsSection({items}: StatsSectionProps) {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
                 {/* Stats Grid */}
                 {/* 使用 grid-cols 的动态适配，如果 items 数量不同也能较好显示 */}
-                <div className={`grid grid-cols-2 lg:grid-cols-${items.length > 4 ? 4 : items.length} gap-6 md:gap-8`}>
-                    {items.map((item, index) => {
+                <div className={`grid grid-cols-2 lg:grid-cols-${data.length > 4 ? 4 : data.length} gap-6 md:gap-8`}>
+                    {data.map((item, index) => {
                         const Icon = (Icons[item.iconName] as Icons.LucideIcon) || Icons.HelpCircle; // 提取图标组件
                         return (
                             <Card
