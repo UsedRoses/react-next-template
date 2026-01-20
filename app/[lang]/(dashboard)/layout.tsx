@@ -19,13 +19,9 @@ export default async function DashboardLayout({
     const {lang} = await params;
 
     return (
-        <html className={`${inter.variable} antialiased`} lang={lang} dir={dir(lang)} suppressHydrationWarning>
-        <body className={inter.className}>
             <BaseLayout>
                 {children}
                 <Toaster position="top-center" richColors />
             </BaseLayout>
-        </body>
-        </html>
     );
 }

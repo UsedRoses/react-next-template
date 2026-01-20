@@ -55,7 +55,6 @@ export function SeoLandingTemplate({ toolSlot, seoContent }: SeoTemplateProps) {
                             {/*
                                 优雅的分割线逻辑：
                                 1. 如果配置了 hasSeparator 为 true
-                                2. 或者是第一个元素但不是 Logo (防止第一个元素紧贴 Hero 太突兀)
                             */}
                             {hasSeparator && (
                                 <SectionSeparator />

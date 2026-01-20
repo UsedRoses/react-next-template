@@ -11,6 +11,7 @@ import {dir} from 'i18next';
 import {Toaster} from "sonner";
 import {GoogleAnalytics} from "@next/third-parties/google";
 import {getTranslation} from "@/i18n/server";
+import {TransitionProvider} from "@/components/common/transition-provider";
 
 type Props = {
     params: { lang: string };
@@ -118,15 +119,17 @@ export default async function RootLayout({
         <body className={inter.className}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
             <SidebarConfigProvider>
-                <TranslationsProvider
-                    locale={lang}
-                    namespaces={i18nNamespaces}
-                    resources={resources}
-                >
-                    {children}
+                <TransitionProvider>
+                    <TranslationsProvider
+                        locale={lang}
+                        namespaces={i18nNamespaces}
+                        resources={resources}
+                    >
+                        {children}
 
-                    <Toaster position="top-center" richColors />
-                </TranslationsProvider>
+                        <Toaster position="top-center" richColors />
+                    </TranslationsProvider>
+                </TransitionProvider>
             </SidebarConfigProvider>
         </ThemeProvider>
 

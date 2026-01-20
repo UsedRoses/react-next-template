@@ -47,7 +47,7 @@ export function ToolEngine({ config }: ToolEngineProps) {
                 const errorMessage = errorData.message || t("Toast.generation_failed");
 
                 toast.error(errorMessage); // 直接弹窗
-                stopGeneration(); // 停止 Loading 动画
+                stopGeneration(); // 停止 Template 动画
                 return; // 中断执行
             }
 
@@ -94,7 +94,7 @@ export function ToolEngine({ config }: ToolEngineProps) {
                     {isGenerating ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            {t("Loading.processing")}
+                            {t("Template.processing")}
                         </>
                     ) : (
                         <>

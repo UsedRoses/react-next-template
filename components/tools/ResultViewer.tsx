@@ -12,16 +12,16 @@ export function ResultViewer() {
     const isGenerating = useToolStore((s) => s.isGenerating);
     const result = useToolStore((s) => s.result);
 
-    // Loading 状态
+    // Template 状态
     if (isGenerating) {
         return (
             <div className="h-full min-h-100 w-full rounded-xl border border-border bg-muted/10 flex flex-col items-center justify-center gap-4">
-                {/* Loading UI 保持不变 */}
+                {/* Template UI 保持不变 */}
                 <div className="relative w-16 h-16">
                     {/* ...spinner... */}
                 </div>
                 <p className="text-sm font-medium text-muted-foreground animate-pulse">
-                    {t("Loading.dreaming")}
+                    {t("Template.dreaming")}
                 </p>
             </div>
         );

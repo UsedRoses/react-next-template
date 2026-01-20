@@ -31,7 +31,6 @@ export function BaseLayout({ children }: BaseLayoutProps) {
       }
       className={config.collapsible === "none" ? "sidebar-none-mode" : ""}
     >
-      <TransitionProvider>
       {config.side === "left" ? (
         <>
           <AppSidebar
@@ -79,7 +78,6 @@ export function BaseLayout({ children }: BaseLayoutProps) {
       {/*  onOpenChange={setThemeCustomizerOpen}*/}
       {/*/>*/}
       {/*<UpgradeToProButton />*/}
-      </TransitionProvider>
     </SidebarProvider>
   )
 }

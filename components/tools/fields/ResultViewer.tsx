@@ -16,11 +16,11 @@ export default function ResultViewer({
                              }: ResultViewerProps) {
     const { t } = useTranslation('components');
 
-    // 状态 1: 正在生成 (Loading)
+    // 状态 1: 正在生成 (Template)
     if (isLoading) {
         return (
             <div className="h-full min-h-100 w-full rounded-xl border border-border bg-muted/10 flex flex-col items-center justify-center gap-4">
-                {/* 使用 Primary 颜色的 Loading 动画 */}
+                {/* 使用 Primary 颜色的 Template 动画 */}
                 <div className="relative w-16 h-16">
                     <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
                     <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
