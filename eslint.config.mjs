@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactCompiler from "eslint-plugin-react-compiler";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -13,6 +14,15 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    plugins: {
+      "react-compiler": reactCompiler,
+    },
+    rules: {
+      // 建议先设置为 "warn" (警告)，如果你想强制修正则改为 "error"
+      "react-compiler/react-compiler": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

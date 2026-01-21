@@ -10,7 +10,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-// 导入你 i18n 配置中的语言列表
 import { languages, fallbackLng, cookieName } from "@/i18n/settings"
 import { useTransition } from "@/components/common/transition-provider"
 
@@ -24,20 +23,13 @@ export function LanguageSwitcher() {
 
     const currentLocale = languages.includes(firstSegment) ? firstSegment : fallbackLng
 
-    const getCookie = (name: string) => {
-        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-        return match ? match[2] : null
-    }
-
+    // 这是一个事件处理函数 (Event Handler)
+    // Compiler 知道这里面发生 Side Effect (修改 Cookie) 是安全的
     const handleLocaleChange = (newLocale: string) => {
-        if (!pathname) return
-        // 如果语言没变，不触发
-        if (newLocale === currentLocale) return
+        if (!pathname || newLocale === currentLocale) return
 
-        // 2. 检查第一段是否是【任何】已支持的语言 (en, zh, 等)
-        const isLocaleSegment = languages.includes(segments[1])
-
-        // 3. 提取纯净路径 (去除现有的语言前缀)
+        // 1. 路径处理逻辑
+        const isLocaleSegment = languages.includes(firstSegment)
         const pureSegments = isLocaleSegment ? ["", ...segments.slice(2)] : segments
 
         // 过滤空字符串并重新组合成路径（确保是以 / 开头）
@@ -45,32 +37,19 @@ export function LanguageSwitcher() {
         // 修复可能出现的双斜杠情况
         purePath = purePath.replace(/\/+$/, '') || '/'
 
-        // 4. 根据目标语言构建新路径
-        let newPath: string
-        if (newLocale === fallbackLng) {
-            newPath = purePath
-        } else {
-            newPath = purePath === '/' ? `/${newLocale}` : `/${newLocale}${purePath}`
-        }
+        const newPath = newLocale === fallbackLng
+            ? purePath
+            : purePath === '/' ? `/${newLocale}` : `/${newLocale}${purePath}`
 
-        // 如果 URL 里的语言跟 Cookie 不一样，就更新 Cookie
-        const currentCookieValue = getCookie(cookieName)
-        if (currentCookieValue !== newLocale) {
-            const days = 365
-            const date = new Date()
-            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
-            const expires = '; expires=' + date.toUTCString()
-
-            // 设置 Cookie
-            document.cookie = `${cookieName}=${newLocale}${expires}; path=/`
-        }
-
-        const days = 365
+        // 计算 365 天后的过期时间
         const date = new Date()
-        date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+        date.setTime(date.getTime() + 365 * 24 * 60 * 60 * 1000)
         const expires = '; expires=' + date.toUTCString()
+
+        // 直接修改 document.cookie 在事件回调中是合法的
         document.cookie = `${cookieName}=${newLocale}${expires}; path=/`
 
+        // 3. 导航逻辑
         if (transition) {
             transition.navigateWithAnimation(newPath)
         } else {
