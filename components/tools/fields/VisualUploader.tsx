@@ -1,122 +1,106 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import React, { useState, useCallback } from "react";
+import { useFormContext, useController } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
-import { useTranslation } from "react-i18next";
-import { UploadCloud, X, Image as ImageIcon } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { UploadCloud, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface VisualUploaderProps {
     name: string;
-    defaultLabel: string;
-    overrideLabel?: string;
-    accept?: Record<string, string[]>;
+    label?: string;
+    accept?: string; // "image/*"
 }
 
-export default function VisualUploader({
-                                   name,
-                                   defaultLabel,
-                                   overrideLabel,
-                                   accept = { "image/*": [] },
-                               }: VisualUploaderProps) {
-    const { control, watch } = useFormContext();
-    const { t } = useTranslation('components');
-    const [preview, setPreview] = useState<string | null>(null);
+export default function VisualUploader({ name, label, accept = "image/*" }: VisualUploaderProps) {
+    const { control } = useFormContext();
+    const { field, fieldState: { error } } = useController({ name, control });
+    const [isUploading, setIsUploading] = useState(false);
 
-    const label = overrideLabel || t(defaultLabel);
-    const fieldValue = watch(name);
+    // 模拟上传函数 - 实际项目中请替换为 S3/OSS 上传
+    const uploadFile = async (file: File) => {
+        setIsUploading(true);
+        // await uploadToS3(file)...
+        setTimeout(() => {
+            const mockUrl = URL.createObjectURL(file);
+            field.onChange(mockUrl); // 将 URL 存入表单
+            setIsUploading(false);
+        }, 1500);
+    };
 
-    // 清理预览 URL 以防内存泄漏
-    useEffect(() => {
-        return () => {
-            if (preview) URL.revokeObjectURL(preview);
-        };
-    }, [preview]);
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        if (acceptedFiles?.[0]) {
+            uploadFile(acceptedFiles[0]);
+        }
+    }, []);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { [accept]: [] },
+        maxFiles: 1,
+        disabled: isUploading || !!field.value
+    });
+
+    const handleRemove = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        field.onChange(""); // 清空
+    };
 
     return (
-        <div className="space-y-3">
-            <Label className="text-foreground">{label}</Label>
+        <div className="space-y-2">
+            {/* 预览状态 */}
+            {field.value ? (
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border group bg-muted">
+                    <img src={field.value} alt="Uploaded" className="w-full h-full object-contain" />
 
-            <Controller
-                control={control}
-                name={name}
-                render={({ field: { onChange, value } }) => {
-                    const onDrop = useCallback((acceptedFiles: File[]) => {
-                        const file = acceptedFiles[0];
-                        if (file) {
-                            onChange(file);
-                            setPreview(URL.createObjectURL(file));
-                        }
-                    }, [onChange]);
-
-                    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-                        onDrop,
-                        accept,
-                        maxFiles: 1,
-                        multiple: false,
-                    });
-
-                    // 状态 A: 已有图片预览
-                    if (preview || (value && typeof value === 'string')) {
-                        return (
-                            <div className="relative group w-full aspect-video rounded-lg overflow-hidden border border-border bg-muted/30">
-                                <img
-                                    src={preview || value}
-                                    alt="Preview"
-                                    className="w-full h-full object-contain"
-                                />
-                                <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onChange(null);
-                                            setPreview(null);
-                                        }}
-                                        className="p-2 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    // 状态 B: 待上传
-                    return (
-                        <div
-                            {...getRootProps()}
-                            className={cn(
-                                "relative flex flex-col items-center justify-center w-full aspect-video rounded-lg border-2 border-dashed transition-all cursor-pointer",
-                                // 默认状态：Muted 背景，Muted 边框
-                                "bg-muted/30 border-muted-foreground/25 hover:bg-muted/50 hover:border-muted-foreground/50",
-                                // 拖拽激活状态：Primary 边框，Primary 背景
-                                isDragActive && "border-primary bg-primary/5"
-                            )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                            type="button"
+                            onClick={handleRemove}
+                            className="bg-destructive/90 hover:bg-destructive text-white px-4 py-2 rounded-full text-sm font-medium transition-transform active:scale-95 flex items-center gap-2"
                         >
-                            <input {...getInputProps()} />
-                            <div className="flex flex-col items-center gap-2 text-center p-4">
-                                <div className={cn(
-                                    "p-3 rounded-full bg-background border border-border shadow-sm",
-                                    isDragActive && "text-primary border-primary"
-                                )}>
-                                    <UploadCloud className="w-6 h-6 text-muted-foreground" />
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-foreground">
-                                        {t("Click to upload or drag and drop")}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        JPG, PNG, WEBP (Max 5MB)
-                                    </p>
-                                </div>
+                            <X className="w-4 h-4" /> Remove
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                /* 上传区域 */
+                <div
+                    {...getRootProps()}
+                    className={cn(
+                        "relative flex flex-col items-center justify-center w-full aspect-[2/1] rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer",
+                        isDragActive
+                            ? "border-primary bg-primary/5 scale-[1.01]"
+                            : "border-border bg-card hover:bg-muted/50 hover:border-muted-foreground/50",
+                        error && "border-destructive/50 bg-destructive/5"
+                    )}
+                >
+                    <input {...getInputProps()} />
+
+                    {isUploading ? (
+                        <div className="flex flex-col items-center gap-3 text-muted-foreground animate-pulse">
+                            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                            <p className="text-sm font-medium">Uploading...</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-3 text-center p-4">
+                            <div className="p-4 rounded-full bg-muted shadow-inner">
+                                <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-foreground">
+                                    {isDragActive ? "Drop it here!" : "Click or Drag to Upload"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Support JPG, PNG (Max 5MB)
+                                </p>
                             </div>
                         </div>
-                    );
-                }}
-            />
+                    )}
+                </div>
+            )}
+
+            {error && <p className="text-xs text-destructive">{error.message}</p>}
         </div>
     );
 }

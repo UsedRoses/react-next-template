@@ -218,8 +218,8 @@ export function LandingNavbar() {
   ], [t])
 
   return (
-    <header ref={desktopNavRef} className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+    <header ref={desktopNavRef} className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/30 h-(--navbar-height)">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-full items-center justify-between">
         {/* Logo */}
         <div className="flex items-center space-x-2 gsap-reveal">
           <I18nLink href="/" className="flex items-center space-x-2 cursor-pointer">

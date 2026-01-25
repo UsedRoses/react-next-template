@@ -21,16 +21,16 @@ const loadField = (importFn: any) =>
 
 export const FIELD_REGISTRY: Record<string, ComponentType<BaseFieldProps>> = {
     // 1. 文本输入
-    MagicTextarea: loadField(() => import("./fields/MagicTextarea")),
+    textarea: loadField(() => import("./fields/MagicTextarea")),
 
     // 2. 可视化选择
-    VisualSelector: loadField(() => import("./fields/VisualSelector")),
+    visual_selector: loadField(() => import("./fields/VisualSelector")),
 
     // 3. 图片/视频上传
-    VisualUploader: loadField(() => import("./fields/VisualUploader")),
+    upload: loadField(() => import("./fields/VisualUploader")),
 
     // 4. 分割线
-    Divider: loadField(() => import("./fields/Divider")),
+    divider: loadField(() => import("./fields/Divider")),
 
     // 以后如果要加 Slider, Switch 等组件，就在这里注册
     // Slider: loadField(() => import("./fields/Slider")),

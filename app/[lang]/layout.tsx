@@ -2,7 +2,6 @@ import type {Metadata} from "next";
 import "../globals.css";
 import React from 'react'
 import {ThemeProvider} from "@/components/common/theme-provider";
-import {SidebarConfigProvider} from "@/contexts/sidebar-context";
 import {inter} from "@/lib/fonts";
 import {siteConfig} from "@/config/site";
 import {fallbackLng} from "@/i18n/settings";
@@ -118,7 +117,6 @@ export default async function RootLayout({
         <html className={`${inter.variable} antialiased`} lang={lang} dir={dir(lang)} suppressHydrationWarning>
         <body className={inter.className}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-            <SidebarConfigProvider>
                 <TransitionProvider>
                     <TranslationsProvider
                         locale={lang}
@@ -130,7 +128,6 @@ export default async function RootLayout({
                         <Toaster position="top-center" richColors />
                     </TranslationsProvider>
                 </TransitionProvider>
-            </SidebarConfigProvider>
         </ThemeProvider>
 
         {/*<GoogleAnalytics gaId="G-XXXXXXXXXX" />*/}

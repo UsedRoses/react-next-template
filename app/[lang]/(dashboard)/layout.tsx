@@ -8,6 +8,7 @@ import {inter} from "@/lib/fonts";
 import {dir} from "i18next";
 import {BaseLayout} from "@/components/layouts/base-layout";
 import {Toaster} from "sonner";
+import {SidebarConfigProvider} from "@/contexts/sidebar-context";
 
 export default async function DashboardLayout({
                                             children,
@@ -19,9 +20,11 @@ export default async function DashboardLayout({
     const {lang} = await params;
 
     return (
+        <SidebarConfigProvider>
             <BaseLayout>
                 {children}
                 <Toaster position="top-center" richColors />
             </BaseLayout>
+        </SidebarConfigProvider>
     );
 }

@@ -1,30 +1,27 @@
-// 数据库中 tool_config.fields 的单个项结构
-export interface ToolFieldConfig {
-    id: string;
-    type: string;        // 组件类型: MagicTextarea, VisualSelector...
-    bind_key: string;    // API 参数名: prompt, aspect_ratio...
-    grid_col?: number;   // 栅格宽度: 1-12
+export type FieldType = string;
 
-    // 逻辑配置
+export interface BaseFieldProps {
+    name: string;                // React Hook Form 的字段名
+    config: ToolFieldConfig;     // 完整的配置对象
+    onValueChange?: (value: any) => void;
+    [key: string]: any;          // 允许透传 ui_props 里的任意属性 (label, options, etc.)
+}
+
+export interface ToolFieldConfig {
+    id: string;          // 数据库里的字段ID
+    type: FieldType;     // 组件类型映射 key
+    bind_key: string;    // 提交给 API 的 JSON key (如 "prompt", "aspect_ratio")
+    grid_col?: number;   // 布局宽度 (1-12)
+
+    // 核心逻辑配置
+    defaultValue?: any;
     validation?: {
         required?: boolean;
         min?: number;
         max?: number;
-    };
-    condition?: {
-        field: string;
-        operator: 'eq' | 'neq';
-        value: any;
+        pattern?: string;
     };
 
-    // UI 参数 (从数据库透传给组件的 props)
-    ui_props?: Record<string, any>;
-}
-
-// 组件的标准 Props 接口 (所有原子组件都要继承这个)
-export interface BaseFieldProps {
-    name: string;           // 对应 bind_key，用于 RHF 绑定
-    defaultLabel?: string;  // 数据库 structure_config 里的英文 Label
-    overrideLabel?: string; // 数据库 seo_page_contents 里的翻译 Label
-    config: ToolFieldConfig; // 完整的配置对象，备用
+    // UI 配置 (传入组件 props)
+    ui_props: Record<string, any>;
 }
