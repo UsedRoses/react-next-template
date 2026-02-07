@@ -1,49 +1,44 @@
 "use client";
 
-import {useForm, FormProvider} from "react-hook-form";
-import {useTranslation} from "react-i18next";
-import {toast} from "sonner";
-import {zodResolver} from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {Button} from "@/components/ui/premium-button";
-import {Loader2, Sparkles} from "lucide-react";
-import {FIELD_REGISTRY} from "./registry";
-import {ToolFieldConfig} from "@/types/tool-config";
-import {useToolStore} from "@/hooks/use-tool-store";
-import {cn} from "@/lib/utils";
-import {ScrollArea} from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/premium-button";
+import { Loader2, Sparkles } from "lucide-react";
+import { FIELD_REGISTRY } from "./registry";
+import { ToolFieldConfig } from "@/types/tool-config";
+import { useToolStore } from "@/hooks/use-tool-store"; // 引用你提供的最新 Store
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-// 动态生成 Zod Schema
+// 1. 动态生成 Zod Schema (逻辑保持不变)
 const generateSchema = (fields: ToolFieldConfig[]) => {
     const shape: Record<string, any> = {};
 
     fields.forEach((field) => {
         let validator;
-
-        // 基础类型验证
         switch (field.type) {
             case 'number':
             case 'slider':
-                validator = z.coerce.number(); // 强制转数字
+                validator = z.coerce.number();
                 if (field.validation?.min !== undefined) validator = validator.min(field.validation.min);
                 if (field.validation?.max !== undefined) validator = validator.max(field.validation.max);
                 break;
             case 'upload':
-                // 上传可能是 string (url) 或 File，视业务逻辑而定
-                // 这里假设上传组件处理完直接返回 URL string
                 validator = z.string();
                 break;
             default:
                 validator = z.string();
         }
 
-        // 必填验证
         if (field.validation?.required) {
-            validator = validator.min(1, {message: "Required"});
+            validator = validator.min(1, { message: "Required" });
         } else {
             validator = validator.optional();
         }
-
         shape[field.bind_key] = validator;
     });
 
@@ -58,14 +53,25 @@ interface ToolEngineProps {
     };
 }
 
-export function ToolEngine({config}: ToolEngineProps) {
-    const {t} = useTranslation("components");
-    const {isGenerating, startGeneration, finishGeneration, stopGeneration} = useToolStore();
+export function ToolEngine({ config }: ToolEngineProps) {
+    const { t } = useTranslation("components");
 
-    // 1. 动态构建 Schema
+    // 拆分字段：找出需要固定在顶部的 model_selector
+    const topField = config.fields.find(f => f.type === 'model_selector');
+    const scrollableFields = config.fields.filter(f => f.type !== 'model_selector');
+
+    // 2. 使用新版 Store 的方法
+    const {
+        isGenerating,
+        setGenerating, // 替代 startGeneration/stopGeneration
+        setResult,     // 替代 finishGeneration
+        inputValues    // 用于回填
+    } = useToolStore();
+
+    // 动态构建 Schema
     const schema = generateSchema(config.fields);
 
-    // 2. 初始化 Form
+    // 初始化 Form
     const methods = useForm<Record<string, any>>({
         mode: "onChange",
         resolver: zodResolver(schema),
@@ -75,42 +81,45 @@ export function ToolEngine({config}: ToolEngineProps) {
         }), {})
     });
 
-    // 3. 核心功能：监听模版变更，自动填充参数
-    // 假设 VisualSelector 绑定的是 "template_id" 或 "model_id"
-    // 我们需要监听所有的 VisualSelector 类型的字段
+    // 3. 监听回填数据变化
+    // 当在结果页点击“二次编辑”时，Store 中的 inputValues 会更新，这里负责填入表单
+    useEffect(() => {
+        if (inputValues) {
+            console.log("Restoring form data:", inputValues);
+            methods.reset(inputValues);
+            // 可选：给个提示
+            // toast.info(t("Form data restored"));
+        }
+    }, [inputValues, methods]);
+
+    // 4. 字段联动逻辑 (Preset Logic)
     const handleFieldChange = (bindKey: string, newValue: any) => {
-        // 1. 找到当前变更的字段配置
         const currentField = config.fields.find(f => f.bind_key === bindKey);
         if (!currentField) return;
 
-        // 2. 检查是否有预设联动 (Preset Logic)
         if (currentField.type === 'visual_selector' && currentField.ui_props.options) {
             const selectedOption = currentField.ui_props.options.find((opt: any) => opt.value === newValue);
 
-            // 3. 如果选中项有 preset_values，则设置其他字段
             if (selectedOption?.preset_values) {
                 Object.entries(selectedOption.preset_values).forEach(([targetKey, targetValue]) => {
-                    // 使用 setValue 更新其他字段
                     methods.setValue(targetKey, targetValue, {
-                        shouldValidate: true, // 触发目标字段的验证（如取消红色必填警告）
+                        shouldValidate: true,
                         shouldDirty: true
                     });
                 });
-
-                // 可选：在这里加个 Toast 告诉用户参数已自动调整
-                // toast.info("Parameters updated based on selection");
             }
         }
     };
 
-
+    // 5. 提交逻辑适配新 Store
     const handleSubmit = async (data: any) => {
-        startGeneration();
+        // A. 开始状态
+        setGenerating(true);
+
         try {
-            // 模拟 API 请求，实际替换为 fetch
             const response = await fetch("/api/generate", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: config.api_action,
                     payload: data
@@ -119,38 +128,72 @@ export function ToolEngine({config}: ToolEngineProps) {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.message || t("Toast.generation_failed");
+                const errorMessage = errorData.message || t("Generation Failed");
 
-                toast.error(errorMessage); // 直接弹窗
-                stopGeneration(); // 停止 Template 动画
-                return; // 中断执行
+                toast.error(errorMessage);
+                // B. 错误停止：直接设为 false
+                setGenerating(false);
+                return;
             }
 
             const result = await response.json();
 
-            // 成功回调
-            finishGeneration(result.url, result.type || 'video', result.metadata);
+            // C. 成功状态：构建结果对象并存入 Store
+            // Store 的 setResult 会自动将 isGenerating 设为 false，并跳转 Tab
+            setResult({
+                url: result.url,
+                type: result.type || 'video',
+                metadata: result.metadata,
+                // 这里可以把原始请求参数也存进去，方便 ResultView 直接做“二次编辑”
+                // 但因为我们已经在 Store 里有 inputValues 逻辑，这里只需存结果即可
+                requestParams: data
+            });
+
             toast.success(t("Success"));
 
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || t("Error"));
-            stopGeneration();
+            // D. 异常停止
+            setGenerating(false);
         }
     };
 
     return (
         <FormProvider {...methods}>
-            {/* 1. Form 撑满左侧卡片的高度 */}
             <form onSubmit={methods.handleSubmit(handleSubmit)} className="flex flex-col h-full w-full">
 
-                {/* 2. 滚动区域：flex-1 占满剩余空间 */}
+                {/*
+                   区域 1: 顶部固定区 (Model Selector)
+                   放在 ScrollArea 外部，不会随表单滚动
+                */}
+                {topField && (
+                    <div className="p-4 pb-0 shrink-0 animate-in fade-in slide-in-from-top-2">
+                        {(() => {
+                            const Component = FIELD_REGISTRY[topField.type];
+                            if (!Component) return null;
+                            return (
+                                <Component
+                                    name={topField.bind_key}
+                                    config={topField}
+                                    onValueChange={(val) => handleFieldChange(topField.bind_key, val)}
+                                    {...topField.ui_props}
+                                />
+                            );
+                        })()}
+                    </div>
+                )}
+
+                {/*
+                   区域 2: 中间滚动区 (其他字段)
+                */}
                 <ScrollArea className="flex-1 overflow-hidden">
                     <div className="p-4 space-y-6 pb-4">
                         <div className="flex flex-col gap-6">
-                            {config.fields.map((field) => {
+                            {scrollableFields.map((field) => {
                                 const Component = FIELD_REGISTRY[field.type];
                                 if (!Component) return null;
+
                                 const isFullWidth = field.grid_col === 12 || !field.grid_col;
 
                                 return (
@@ -168,26 +211,21 @@ export function ToolEngine({config}: ToolEngineProps) {
                     </div>
                 </ScrollArea>
 
-                {/*
-                   3. 底部按钮区：
-                   - 不用 fixed，用 sticky bottom-0 配合 flex 布局
-                   - bg-background/80 改为与卡片背景融合的颜色，或者半透明
-                   - 确保它在卡片内部的最下方
-                */}
+                {/* 底部按钮 */}
                 <div className="shrink-0 p-4 pt-2 w-full sticky bottom-0 z-10 bg-linear-to-t from-muted/90 via-muted/80 to-transparent backdrop-blur-sm">
                     <Button
                         type="submit"
                         disabled={isGenerating}
-                        className="w-full h-12 text-lg font-semibold rounded-md shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]"
+                        className="w-full h-12 text-lg font-semibold rounded-md shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98] cursor-pointer"
                     >
                         {isGenerating ? (
                             <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin"/>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Processing...
                             </>
                         ) : (
                             <>
-                                <Sparkles className="mr-2 h-5 w-5 fill-current"/>
+                                <Sparkles className="mr-2 h-5 w-5 fill-current" />
                                 {config.submit_text || "Generate"}
                             </>
                         )}

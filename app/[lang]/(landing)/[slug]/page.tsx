@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SeoLandingTemplate } from "@/components/landing/seo-landing-template";
-import { ToolWorkspace } from "@/components/tools/ToolWorkspace";
+import { ToolWorkspace } from "@/components/tools/tool-workspace";
 import { Metadata } from "next";
 import { fallbackLng } from "@/i18n/settings";
 

@@ -32,6 +32,9 @@ export const FIELD_REGISTRY: Record<string, ComponentType<BaseFieldProps>> = {
     // 4. 分割线
     divider: loadField(() => import("./fields/Divider")),
 
-    // 以后如果要加 Slider, Switch 等组件，就在这里注册
-    // Slider: loadField(() => import("./fields/Slider")),
+    // 5. 尺寸选择
+    aspect_ratio_selector: loadField(() => import("./fields/AspectRatioSelector")),
+
+    // 6. 模型或模版
+    model_selector: loadField(() => import("./fields/ModelSelector")),
 };

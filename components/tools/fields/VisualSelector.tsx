@@ -137,7 +137,7 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
 
             {/* 遮罩层：选中或未选中 */}
             <div className={cn(
-                "absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity",
+                "absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent transition-opacity",
                 isSelected ? "opacity-80" : "opacity-60 group-hover:opacity-40"
             )} />
 

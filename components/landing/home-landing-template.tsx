@@ -12,6 +12,7 @@ import { ContactSection } from './seo/contact-section'
 import { FaqSection } from './seo/faq-section'
 import { AboutSection } from './seo/about-section'
 import {SectionSeparator} from "@/components/ui/section-separator";
+import {VideoComparisonPlayer} from "@/components/common/video-comparison-player";
 
 interface HomeTemplateProps {
     heroData?: React.ComponentProps<typeof HeroSection>;
