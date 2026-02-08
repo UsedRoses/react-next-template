@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/premium-button";
-import { Eraser, Trash2 } from "lucide-react";
+import { Eraser } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MagicTextareaProps {
