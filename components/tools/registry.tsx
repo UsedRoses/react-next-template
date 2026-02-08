@@ -27,7 +27,7 @@ export const FIELD_REGISTRY: Record<string, ComponentType<BaseFieldProps>> = {
     visual_selector: loadField(() => import("./fields/VisualSelector")),
 
     // 3. 图片/视频上传
-    upload: loadField(() => import("./fields/VisualUploader")),
+    upload: loadField(() => import("./fields/FileUploader")),
 
     // 4. 分割线
     divider: loadField(() => import("./fields/Divider")),
@@ -37,4 +37,7 @@ export const FIELD_REGISTRY: Record<string, ComponentType<BaseFieldProps>> = {
 
     // 6. 模型或模版
     model_selector: loadField(() => import("./fields/ModelSelector")),
+
+    // 7. 首尾帧上传组件
+    frame_selector: loadField(() => import("./fields/StartEndFileUploader")),
 };

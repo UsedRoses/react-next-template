@@ -6,26 +6,33 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface VisualOption {
     value: string;
     label: string;
     image?: string;
     video?: string;
-    badge?: string; // 如 "Pro", "New"
+    badge?: string;
     disabled?: boolean;
 }
-// 修改 Props 定义，继承 BaseFieldProps 或手动添加 onValueChange
+
 interface VisualSelectorProps {
     name: string;
     label?: string;
-    options?: any[];
+    options?: VisualOption[];
     required?: boolean;
-    // 关键：接收父组件传来的回调
     onValueChange?: (value: any) => void;
 }
 
-export default function VisualSelector({ name, label, options = [], required, onValueChange }: VisualSelectorProps) {
+export default function VisualSelector({
+                                           name,
+                                           label,
+                                           options = [],
+                                           required,
+                                           onValueChange
+                                       }: VisualSelectorProps) {
+    const { t } = useTranslation("components"); // 仅用于翻译系统级提示(如必填)
     const { control } = useFormContext();
     const { field, fieldState: { error } } = useController({
         name,
@@ -33,27 +40,26 @@ export default function VisualSelector({ name, label, options = [], required, on
         rules: { required }
     });
 
-    // 处理选择逻辑
     const handleSelect = (newValue: string) => {
-        // 1. 更新 React Hook Form 内部状态
         field.onChange(newValue);
-
-        // 2. 触发父组件的联动逻辑 (如果有)
         if (onValueChange) {
             onValueChange(newValue);
         }
     };
 
+    // 获取当前选中的 label 用于右上角显示
+    const currentSelection = options.find(o => o.value === field.value);
+
     return (
         <div className="space-y-3">
-            {/* Label 部分保持不变 */}
             {label && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                     <Label className={cn(error && "text-destructive")}>
                         {label} {required && <span className="text-destructive">*</span>}
                     </Label>
+                    {/* 直接显示选中的 Label，不翻译 */}
                     <span className="text-xs text-muted-foreground font-medium">
-                        {options.find(o => o.value === field.value)?.label}
+                        {currentSelection?.label}
                     </span>
                 </div>
             )}
@@ -64,18 +70,22 @@ export default function VisualSelector({ name, label, options = [], required, on
                         key={option.value}
                         option={option}
                         isSelected={field.value === option.value}
-                        // 修改这里：调用 handleSelect
                         onSelect={() => handleSelect(option.value)}
                     />
                 ))}
             </div>
 
-            {error && <p className="text-xs text-destructive mt-1">{error.message}</p>}
+            {error && (
+                <p className="text-xs text-destructive mt-1">
+                    {/* 错误信息保留翻译兜底 */}
+                    {String(error.message || t("Required"))}
+                </p>
+            )}
         </div>
     );
 }
 
-// 独立的卡片组件，处理 Hover Video 逻辑
+// 独立的卡片组件
 function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, isSelected: boolean, onSelect: () => void }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isHovering, setIsHovering] = useState(false);
@@ -101,10 +111,10 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "relative group cursor-pointer rounded-xl border-2 overflow-hidden transition-all duration-200 aspect-[16/9] bg-muted",
+                "relative group cursor-pointer rounded-xl border-2 overflow-hidden transition-all duration-200 aspect-video bg-muted",
                 isSelected
                     ? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10"
-                    : "border-transparent hover:border-border ring-1 ring-border",
+                    : "border-border hover:border-primary/50", // 简化 hover 逻辑
                 option.disabled && "opacity-50 cursor-not-allowed grayscale"
             )}
         >
@@ -112,7 +122,7 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
             {option.image && (
                 <img
                     src={option.image}
-                    alt={option.label}
+                    alt={option.label} // 直接使用数据库配置的 Label
                     className={cn(
                         "absolute inset-0 w-full h-full object-cover transition-transform duration-700",
                         isHovering && !option.disabled ? "scale-110" : "scale-100"
@@ -120,7 +130,7 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
                 />
             )}
 
-            {/* 背景层：视频 (Hover时显示) */}
+            {/* 背景层：视频 */}
             {option.video && (
                 <video
                     ref={videoRef}
@@ -135,7 +145,7 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
                 />
             )}
 
-            {/* 遮罩层：选中或未选中 */}
+            {/* 遮罩层 */}
             <div className={cn(
                 "absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent transition-opacity",
                 isSelected ? "opacity-80" : "opacity-60 group-hover:opacity-40"
@@ -156,10 +166,9 @@ function OptionCard({ option, isSelected, onSelect }: { option: VisualOption, is
                 )}
             </div>
 
-            {/* Badge */}
             {option.badge && (
                 <div className="absolute top-2 left-2 z-20">
-                    <Badge variant="secondary" className="text-[10px] px-1.5 h-5 bg-background/80 backdrop-blur text-foreground">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 h-5 bg-background/80 backdrop-blur text-foreground border-white/10">
                         {option.badge}
                     </Badge>
                 </div>

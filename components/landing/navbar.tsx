@@ -151,7 +151,7 @@ export function LandingNavbar() {
           title: t('Free Blocks'),
           description: t('Essential UI components and sections'),
           icon: Package,
-          href: '/test-video'
+          href: '/ai-video-interpolator'
       },{
         title: t('Premium Templates'),
         description: t('Complete page templates and layouts'),

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/premium-button";
 import { Loader2, Sparkles } from "lucide-react";
 import { FIELD_REGISTRY } from "./registry";
 import { ToolFieldConfig } from "@/types/tool-config";
-import { useToolStore } from "@/hooks/use-tool-store"; // 引用你提供的最新 Store
+import { useToolStore } from "@/hooks/use-tool-store";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,17 +27,35 @@ const generateSchema = (fields: ToolFieldConfig[]) => {
                 if (field.validation?.min !== undefined) validator = validator.min(field.validation.min);
                 if (field.validation?.max !== undefined) validator = validator.max(field.validation.max);
                 break;
+
             case 'upload':
-                validator = z.string();
+                // 单上传组件 Schema
+                validator = z.union([z.string(), z.instanceof(File), z.array(z.any()), z.null()]);
+                break;
+
+            case 'frame_selector':
+                // 首尾帧 Schema：是一个对象，包含 start 和 end
+                validator = z.object({
+                    start: z.union([z.string(), z.instanceof(File), z.null()]).optional(),
+                    end: z.union([z.string(), z.instanceof(File), z.null()]).optional(),
+                });
                 break;
             default:
                 validator = z.string();
         }
 
         if (field.validation?.required) {
-            validator = validator.min(1, { message: "Required" });
+            if (field.type === 'frame_selector') {
+                // 如果是首尾帧，要求 start 和 end 必须至少有一个 (或者根据业务需求都必须有)
+                validator = validator.refine((val: any) => val && val.start && val.end, {
+                    message: "At least one frame is required"
+                });
+            } else {
+                // @ts-ignore
+                validator = validator.min(1, { message: "Required" });
+            }
         } else {
-            validator = validator.optional();
+            validator = validator.optional().nullable();
         }
         shape[field.bind_key] = validator;
     });
@@ -54,7 +72,7 @@ interface ToolEngineProps {
 }
 
 export function ToolEngine({ config }: ToolEngineProps) {
-    const { t } = useTranslation("components");
+    const { t } = useTranslation("tools");
 
     // 拆分字段：找出需要固定在顶部的 model_selector
     const topField = config.fields.find(f => f.type === 'model_selector');
@@ -85,10 +103,7 @@ export function ToolEngine({ config }: ToolEngineProps) {
     // 当在结果页点击“二次编辑”时，Store 中的 inputValues 会更新，这里负责填入表单
     useEffect(() => {
         if (inputValues) {
-            console.log("Restoring form data:", inputValues);
             methods.reset(inputValues);
-            // 可选：给个提示
-            // toast.info(t("Form data restored"));
         }
     }, [inputValues, methods]);
 
@@ -116,13 +131,38 @@ export function ToolEngine({ config }: ToolEngineProps) {
         // A. 开始状态
         setGenerating(true);
 
+        const payload = { ...data };
+
+        // 遍历找出需要上传的字段 (简化版逻辑，实际可封装通用函数)
+        for (const key in payload) {
+            const value = payload[key];
+
+            // 情况 A: 普通上传
+            if (value instanceof File) {
+                // const url = await uploadToOss(value);
+                // payload[key] = url;
+            }
+
+            // 情况 B: 首尾帧对象 { start: File, end: File }
+            if (value && typeof value === 'object' && ('start' in value || 'end' in value)) {
+                if (value.start instanceof File) {
+                    // const url = await uploadToOss(value.start);
+                    // payload[key].start = url;
+                }
+                if (value.end instanceof File) {
+                    // const url = await uploadToOss(value.end);
+                    // payload[key].end = url;
+                }
+            }
+        }
+
         try {
             const response = await fetch("/api/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: config.api_action,
-                    payload: data
+                    payload: payload
                 }),
             });
 

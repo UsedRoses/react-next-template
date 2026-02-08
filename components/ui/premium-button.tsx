@@ -122,7 +122,7 @@ const Button = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button"
                 {variant !== "link" && (
                     <span
                         ref={flairRef}
-                        className="button__flair pointer-events-none absolute inset-0 block origin-[0_0] scale-0 z-[-1]"
+                        className="button__flair pointer-events-none absolute inset-0 block origin-top-left scale-0 z-[-1]"
                     >
                     <span className={flairBgClass}/>
                 </span>

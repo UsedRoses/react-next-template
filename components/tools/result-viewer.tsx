@@ -34,11 +34,10 @@ export function ResultView() {
     return (
         <div className="space-y-4">
             {/* 结果展示区 */}
-            <div className="rounded-lg overflow-hidden border">
+            <div className="rounded-xl overflow-hidden bg-card">
                 <VideoComparisonPlayer
                     src={demoVideoUrl}
                     compareSrc={videoB} // 这里传入相同的 URL，组件内的 style={{ filter }} 会负责制造差异
-                    poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
                     className={'object-cover'}
                 />
             </div>
